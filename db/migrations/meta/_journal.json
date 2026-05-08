@@ -15,6 +15,13 @@
       "when": 1778203252955,
       "tag": "0001_pretty_dorian_gray",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778204398624,
+      "tag": "0002_old_forge",
+      "breakpoints": true
     }
   ]
 }

@@ -8,10 +8,10 @@ import {
 
 import { users } from './users';
 
-import { accountTypeEnum } from './enums';
+import { operationTypeEnum } from './enums';
 
-export const accounts = pgTable(
-  'accounts',
+export const financialOperations = pgTable(
+  'financial_operations',
   {
     id: uuid('id')
       .defaultRandom()
@@ -21,18 +21,23 @@ export const accounts = pgTable(
       .references(() => users.id)
       .notNull(),
 
-    name: text('name')
-      .notNull(),
-
-    institution: text('institution')
-      .notNull(),
-
-    accountType: accountTypeEnum(
-      'account_type'
+    operationType: operationTypeEnum(
+      'operation_type'
     ).notNull(),
 
-    currentBalance: numeric(
-      'current_balance',
+    description: text('description')
+      .notNull(),
+
+    totalAmount: numeric(
+      'total_amount',
+      {
+        precision: 14,
+        scale: 2,
+      }
+    ).notNull(),
+
+    interestAmount: numeric(
+      'interest_amount',
       {
         precision: 14,
         scale: 2,

@@ -41,3 +41,37 @@ export const paymentMethodTypeEnum = pgEnum(
     'CREDIT_LINE',
   ]
 );
+
+export const operationTypeEnum = pgEnum(
+  'operation_type',
+  [
+    'PURCHASE',
+    'PIX_CREDIT',
+    'BOLETO_CREDIT',
+    'INSTALLMENT_PURCHASE',
+    'FINANCING',
+    'TRANSFER',
+  ]
+);
+
+export const installmentStatusEnum =
+  pgEnum(
+    'installment_status',
+    [
+      'PENDING',
+      'PAID',
+      'CANCELLED',
+      'ANTICIPATED',
+    ]
+  );
+
+  export const recurrenceFrequencyEnum =
+  pgEnum(
+    'recurrence_frequency',
+    [
+      'DAILY',
+      'WEEKLY',
+      'MONTHLY',
+      'YEARLY',
+    ]
+  );

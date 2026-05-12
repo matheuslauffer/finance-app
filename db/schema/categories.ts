@@ -15,7 +15,7 @@ export const categories = pgTable(
       .defaultRandom()
       .primaryKey(),
 
-    userId: uuid('user_id')
+    userId: text('user_id')
       .references(() => users.id)
       .notNull(),
 

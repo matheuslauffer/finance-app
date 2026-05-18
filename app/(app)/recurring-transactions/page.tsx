@@ -346,9 +346,38 @@ RecurringTransactionsPage() {
                                 </button>
 
                                 </form>
+
+                                
                             )
                             }
+                            {
+                                item.status !== 'ENDED'
+                                && (
 
+                                    <form
+                                    action={`
+                                        /api/recurring-transactions/${item.id}/end
+                                    `}
+
+                                    method="POST"
+                                    >
+
+                                    <button
+                                        type="submit"
+
+                                        className="
+                                        text-sm
+                                        font-medium
+                                        text-red-700
+                                        hover:text-red-900
+                                        "
+                                    >
+                                        Encerrar
+                                    </button>
+
+                                    </form>
+                                )
+                                }
                         </div>
 
                     </td>

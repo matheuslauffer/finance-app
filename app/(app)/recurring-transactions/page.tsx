@@ -12,6 +12,10 @@ import {
   getRecurringTransactions,
 } from '@/services/recurring-transactions-service';
 
+import {
+  GenerateRecurringTransactionsButton,
+} from '@/app/components/generate-recurring-transactions-button';
+
 export default async function
 RecurringTransactionsPage() {
 
@@ -65,24 +69,34 @@ RecurringTransactionsPage() {
 
         </div>
 
-        <Link
-          href="
-            /recurring-transactions/new
-          "
+        <div className="
+          flex
+          items-start
+          gap-3
+        ">
 
-          className="
-            bg-zinc-900
-            text-white
-            px-5
-            py-3
-            rounded-2xl
-            hover:bg-zinc-800
-            transition
-            font-medium
-          "
-        >
-          Nova recorrência
-        </Link>
+          <GenerateRecurringTransactionsButton />
+
+          <Link
+            href="
+              /recurring-transactions/new
+            "
+
+            className="
+              bg-zinc-900
+              text-white
+              px-5
+              py-3
+              rounded-2xl
+              hover:bg-zinc-800
+              transition
+              font-medium
+            "
+          >
+            Nova recorrência
+          </Link>
+
+        </div>
 
       </div>
 

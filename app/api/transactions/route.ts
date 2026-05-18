@@ -143,8 +143,7 @@ export async function POST(
   CREATE
   */
 
-  const result =
-    await createFinancialOperation({
+  await createFinancialOperation({
 
       userId,
 

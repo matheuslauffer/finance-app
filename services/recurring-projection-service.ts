@@ -13,35 +13,8 @@ import {
   gte,
 } from 'drizzle-orm';
 
-type ProjectedTransaction = {
-
-  description: string;
-
-  amount: number;
-
-  transactionType:
-    | 'INCOME'
-    | 'EXPENSE';
-
-  frequency:
-    | 'DAILY'
-    | 'WEEKLY'
-    | 'BIWEEKLY'
-    | 'MONTHLY'
-    | 'YEARLY';
-
-  projectedOccurrences:
-    number;
-
-  projectedTotal:
-    number;
-
-    recurringTransactionId:
-        string;
-};
-
 function
-getOccurrencesInMonth(
+getOccurrencesInWindow(
 
   frequency:
     | 'DAILY'
@@ -50,22 +23,52 @@ getOccurrencesInMonth(
     | 'MONTHLY'
     | 'YEARLY',
 
-  month: string
+  effectiveFrom: string,
+
+  effectiveUntil: string | null,
+
+  monthStart: string,
+
+  monthEnd: string
 ) {
 
-  const [
-    year,
-    monthNumber,
-  ] = month
-    .split('-')
-    .map(Number);
+  const start =
+    effectiveFrom > monthStart
+      ? effectiveFrom
+      : monthStart;
 
-  const daysInMonth =
+  const end =
+    effectiveUntil
+    && effectiveUntil < monthEnd
+      ? effectiveUntil
+      : monthEnd;
+
+  if (
+    start > end
+  ) {
+
+    return 0;
+  }
+
+  const startDate =
     new Date(
-      year,
-      monthNumber,
-      0
-    ).getDate();
+      `${start}T00:00:00`
+    );
+
+  const endDate =
+    new Date(
+      `${end}T00:00:00`
+    );
+
+  const days =
+    Math.floor(
+      (
+        endDate.getTime()
+        - startDate.getTime()
+      )
+      / 86400000
+    )
+    + 1;
 
   switch (
     frequency
@@ -73,31 +76,42 @@ getOccurrencesInMonth(
 
     case 'DAILY':
 
-      return daysInMonth;
+      return days;
 
     case 'WEEKLY':
 
       return Math.ceil(
-        daysInMonth / 7
+        days / 7
       );
 
     case 'BIWEEKLY':
 
       return Math.ceil(
-        daysInMonth / 14
+        days / 14
       );
 
     case 'MONTHLY':
 
       return 1;
 
-    case 'YEARLY':
+    case 'YEARLY': {
+
+      const baseDate =
+        new Date(
+          `${effectiveFrom}T00:00:00`
+        );
 
       return (
-        monthNumber === 1
+        baseDate.getMonth()
+        === startDate.getMonth()
+        && baseDate.getDate()
+        >= startDate.getDate()
+        && baseDate.getDate()
+        <= endDate.getDate()
       )
         ? 1
         : 0;
+    }
 
     default:
 
@@ -107,119 +121,128 @@ getOccurrencesInMonth(
 
 export async function
 getProjectedTransactions(
+
   userId: string,
 
   month: string
-){
-    const [
-        year,
-        monthNumber,
-        ] = month
-        .split('-')
-        .map(Number);
+) {
 
-    const lastDay =
-        new Date(
-            year,
-            monthNumber,
-            0
-        ).getDate();
+  const [
+    year,
+    monthNumber,
+  ] =
+    month
+      .split('-')
+      .map(Number);
 
-    const monthStart =
-        `${month}-01`;
+  const lastDay =
+    new Date(
+      year,
+      monthNumber,
+      0
+    ).getDate();
 
-    const monthEnd =
-        `${month}-${String(
-            lastDay
-        ).padStart(2, '0')}`;
+  const monthStart =
+    `${month}-01`;
 
-    const recurring =
-        await db
+  const monthEnd =
+    `${month}-${String(
+      lastDay
+    ).padStart(2, '0')}`;
 
-            .select()
+  const recurring =
+    await db
 
-            .from(
-               recurringTransactions
+      .select()
+
+      .from(
+        recurringTransactions
+      )
+
+      .where(
+        and(
+
+          eq(
+            recurringTransactions.userId,
+            userId
+          ),
+
+          eq(
+            recurringTransactions.status,
+            'ACTIVE'
+          ),
+
+          lte(
+            recurringTransactions
+              .effectiveFrom,
+
+            monthEnd
+          ),
+
+          or(
+
+            isNull(
+              recurringTransactions
+                .effectiveUntil
+            ),
+
+            gte(
+              recurringTransactions
+                .effectiveUntil,
+
+              monthStart
             )
+          )
+        )
+      );
 
-            .where(
-                and(
+  const projections =
+    recurring.map(
+      (item) => {
 
-                    eq(
-                        recurringTransactions.userId,
-                        userId
-                    ),
+        const projectedOccurrences =
+          getOccurrencesInWindow(
 
-                    eq(
-                        recurringTransactions.status,
-                        'ACTIVE'
-                    ),
+            item.frequency,
 
-                    lte(
-                        recurringTransactions
-                            .effectiveFrom,
+            item.effectiveFrom,
 
-                        monthEnd
-                    ),
+            item.effectiveUntil,
 
-                    or(
+            monthStart,
 
-                        isNull(
-                            recurringTransactions
-                            .effectiveUntil
-                        ),
+            monthEnd
+          );
 
-                        gte(
-                            recurringTransactions
-                            .effectiveUntil,
+        const amount =
+          Number(
+            item.amount
+          );
 
-                            monthStart
-                        )
-                    )
-                )
-            );
-    
-    const projections =
-  recurring.map(
-    (item) => {
+        return {
 
-      const projectedOccurrences =
-        getOccurrencesInMonth(
+          description:
+            item.description,
 
-          item.frequency,
+          amount,
 
-          month
-        );
+          transactionType:
+            item.transactionType,
 
-      const amount =
-        Number(
-          item.amount
-        );
+          frequency:
+            item.frequency,
 
-      return {
+          projectedOccurrences,
 
-        description:
-          item.description,
+          projectedTotal:
+            amount
+            * projectedOccurrences,
 
-        amount,
-
-        transactionType:
-          item.transactionType,
-
-        frequency:
-          item.frequency,
-
-        projectedOccurrences,
-
-        projectedTotal:
-          amount
-          * projectedOccurrences,
-
-        recurringTransactionId:
+          recurringTransactionId:
             item.id,
-      };
-    }
-  );
+        };
+      }
+    );
+
   return projections;
 }
-

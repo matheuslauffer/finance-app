@@ -39,7 +39,7 @@ inferPaymentMethodType(
 ):
   | 'PIX'
   | 'DEBIT'
-  | 'CREDIT'
+  | 'CREDIT_CARD'
   | 'BOLETO'
   | 'BANK_TRANSFER'
   | 'CREDIT_LINE'
@@ -89,7 +89,7 @@ inferPaymentMethodType(
     )
   ) {
 
-    return 'CREDIT';
+    return 'CREDIT_CARD';
   }
 
   if (
@@ -114,7 +114,7 @@ inferPaymentMethodType(
     return 'BANK_TRANSFER';
   }
 
-  return 'CREDIT';
+  return 'CREDIT_CARD';
 }
 
 function

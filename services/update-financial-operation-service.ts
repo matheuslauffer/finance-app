@@ -8,6 +8,14 @@ import {
   eq,
 } from 'drizzle-orm';
 
+import {
+  resolveFinancialMonth,
+} from './financial-month-service';
+
+import {
+  recalculateFinancialMonth,
+} from './recalculate-financial-month';
+
 type Input = {
 
   transactionId:
@@ -44,6 +52,45 @@ updateFinancialOperation({
   effectiveDate,
 }: Input) {
 
+  const [current] =
+    await db
+
+      .select()
+
+      .from(
+        transactions
+      )
+
+      .where(
+        eq(
+          transactions.id,
+
+          transactionId
+        )
+      );
+
+  if (!current) {
+
+    throw new Error(
+      'Transaction not found.'
+    );
+  }
+
+  const occurredAt =
+    new Date(
+      effectiveDate
+    );
+
+  const financialMonth =
+    await resolveFinancialMonth(
+
+      current.userId,
+
+      paymentMethodId,
+
+      occurredAt
+    );
+
   const [updated] =
     await db
 
@@ -64,6 +111,11 @@ updateFinancialOperation({
         transactionType,
 
         effectiveDate,
+
+        financialMonthId:
+          financialMonth.id,
+
+        occurredAt,
       })
 
       .where(
@@ -75,6 +127,20 @@ updateFinancialOperation({
       )
 
       .returning();
+
+  await recalculateFinancialMonth(
+    current.financialMonthId
+  );
+
+  if (
+    current.financialMonthId
+    !== financialMonth.id
+  ) {
+
+    await recalculateFinancialMonth(
+      financialMonth.id
+    );
+  }
 
   return updated;
 }

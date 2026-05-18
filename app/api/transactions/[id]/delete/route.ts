@@ -12,9 +12,9 @@ import {
 
 type Props = {
 
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export async function
@@ -26,6 +26,7 @@ POST(
   }: Props
 ) {
 
+  const { id } = await params;
   const session =
     await auth();
 
@@ -48,7 +49,7 @@ POST(
   }
 
   await deleteFinancialOperation(
-    params.id
+    id
   );
 
   return NextResponse.redirect(

@@ -18,10 +18,6 @@ import {
   ExpensesByCategory,
 } from '../../components/expenses-by-category';
 
-import {
-  getFinancialReconciliation,
-} from '@/services/financial-reconciliation-service';
-
 export default async function
 DashboardPage() {
 
@@ -40,17 +36,6 @@ DashboardPage() {
     await getCurrentDashboard(
       userId
     );
-
-    const reconciliation =
-  await getFinancialReconciliation(
-
-    userId,
-
-    dashboard
-      .recentMonths[0]
-      .referenceMonth
-      .slice(0, 7)
-  );
 
   return (
 

@@ -1,5 +1,3 @@
-import Link from 'next/link';
-
 import {
   Sidebar,
 } from '@/app/components/sidebar';

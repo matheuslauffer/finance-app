@@ -8,10 +8,21 @@ import {
   eq,
 } from 'drizzle-orm';
 
+import { recalculateFinancialMonth } from './recalculate-financial-month';
+
 export async function
 deleteFinancialOperation(
   transactionId: string
 ) {
+
+  const [transaction] = await db
+  .select()
+  .from(transactions)
+  .where(eq(transactions.id, transactionId));
+
+  if (!transaction) {
+    return;
+  }
 
   await db
 
@@ -26,4 +37,6 @@ deleteFinancialOperation(
         transactionId
       )
     );
+
+    await recalculateFinancialMonth(transaction.financialMonthId);
 }

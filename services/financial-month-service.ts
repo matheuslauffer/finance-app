@@ -91,11 +91,18 @@ resolveFinancialMonth(
   */
 
   const referenceMonth =
-    `${baseDate.getFullYear()}-${
-      String(
-        baseDate.getMonth() + 1
-      ).padStart(2, '0')
-    }`;
+  new Date(
+
+    baseDate.getFullYear(),
+
+    baseDate.getMonth(),
+
+    1
+  )
+
+    .toISOString()
+
+    .split('T')[0];
 
   /*
   FIND MONTH

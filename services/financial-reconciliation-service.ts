@@ -1,10 +1,6 @@
 import { db } from '@/db';
 
 import {
-  recurringTransactions,
-} from '@/db/schema/recurring-transactions';
-
-import {
   transactions,
 } from '@/db/schema/transactions';
 

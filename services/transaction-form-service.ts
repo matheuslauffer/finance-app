@@ -10,6 +10,7 @@ import {
 
 import {
   eq,
+  and,
 } from 'drizzle-orm';
 
 export async function
@@ -37,9 +38,18 @@ getTransactionFormData(
       .select()
       .from(paymentMethods)
       .where(
-        eq(
-          paymentMethods.userId,
-          userId
+
+        and(
+
+          eq(
+            paymentMethods.userId,
+            userId
+          ),
+
+          eq(
+            paymentMethods.isActive,
+            true
+          )
         )
       ),
   ]);

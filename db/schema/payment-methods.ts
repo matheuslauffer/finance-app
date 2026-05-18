@@ -4,6 +4,7 @@ import {
   text,
   integer,
   timestamp,
+  boolean
 } from 'drizzle-orm/pg-core';
 
 import { users } from './users';
@@ -36,5 +37,6 @@ export const paymentMethods = pgTable(
       .defaultNow()
       .notNull(),
 
+    isActive: boolean('is_active').notNull().default(true)
   }
 );

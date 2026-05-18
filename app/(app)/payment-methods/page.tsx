@@ -127,6 +127,80 @@ PaymentMethodsPage() {
                   {method.methodType}
                 </p>
 
+                <div className="
+                    mt-4
+                    flex
+                    items-center
+                    justify-between
+                    ">
+
+                    <span className={`
+                        text-xs
+                        font-semibold
+                        px-3
+                        py-1
+                        rounded-full
+
+                        ${
+                        method.isActive
+
+                            ? `
+                            bg-emerald-100
+                            text-emerald-700
+                            `
+
+                            : `
+                            bg-zinc-200
+                            text-zinc-600
+                            `
+                        }
+                    `}>
+
+                        {
+                        method.isActive
+
+                            ? 'Ativo'
+
+                            : 'Inativo'
+                        }
+
+                    </span>
+
+                    </div>
+
+                    <form
+                        action={`
+                            /api/payment-methods/${method.id}/toggle
+                        `}
+
+                        method="POST"
+                        >
+
+                        <button
+                            type="submit"
+
+                            className="
+                            mt-4
+                            text-sm
+                            font-medium
+                            text-zinc-700
+                            hover:text-zinc-900
+                            transition
+                            "
+                        >
+
+                            {
+                            method.isActive
+
+                                ? 'Desativar'
+
+                                : 'Ativar'
+                            }
+
+                        </button>
+
+                        </form>
+
               </div>
             )
           )

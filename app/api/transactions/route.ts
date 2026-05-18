@@ -224,7 +224,7 @@ export async function POST(
 
     return Response.redirect(
       new URL(
-        '/recurring-transactions',
+        '/transactions/new',
         request.url
       )
     );

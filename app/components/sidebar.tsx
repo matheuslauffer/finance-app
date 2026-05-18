@@ -76,6 +76,21 @@ Sidebar() {
         </Link>
 
         <Link
+          href="/recurring-transactions"
+
+          className="
+            p-3
+            rounded-xl
+            hover:bg-zinc-50
+            transition
+            text-zinc-700
+            font-medium
+          "
+        >
+          Recorrências
+        </Link>
+
+        <Link
           href="/payment-methods"
 
           className="

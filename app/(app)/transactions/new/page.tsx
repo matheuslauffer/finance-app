@@ -20,6 +20,10 @@ import {
   getTransactions,
 } from '@/services/transaction-service';
 
+import {
+  getRecurringTransactions,
+} from '@/services/recurring-transactions-service';
+
 export default async function
 NewTransactionPage() {
 
@@ -39,11 +43,92 @@ NewTransactionPage() {
       userId
     );
 
-  const recentTransactions =
-    await getTransactions({
+  const [
+    recentTransactions,
 
-      userId,
-    });
+    recurringTransactions,
+  ] =
+    await Promise.all([
+
+      getTransactions({
+
+        userId,
+      }),
+
+      getRecurringTransactions(
+        userId
+      ),
+    ]);
+
+  const recentItems =
+    [
+      ...recentTransactions.map(
+        (transaction) => ({
+
+          id:
+            transaction.id,
+
+          kind:
+            'TRANSACTION' as const,
+
+          description:
+            transaction.description,
+
+          amount:
+            transaction.amount,
+
+          transactionType:
+            transaction.transactionType,
+
+          status:
+            transaction.status,
+
+          createdAt:
+            transaction.createdAt,
+        })
+      ),
+
+      ...recurringTransactions.map(
+        (recurring) => ({
+
+          id:
+            recurring.id,
+
+          kind:
+            'RECURRING' as const,
+
+          description:
+            recurring.description,
+
+          amount:
+            recurring.amount,
+
+          transactionType:
+            recurring.transactionType,
+
+          status:
+            recurring.status,
+
+          createdAt:
+            recurring.createdAt,
+        })
+      ),
+    ]
+      .sort(
+        (first, second) => (
+          new Date(
+            second.createdAt
+          ).getTime()
+          -
+          new Date(
+            first.createdAt
+          ).getTime()
+        )
+      )
+      .slice(
+        0,
+        8
+      );
 
   return (
 
@@ -143,14 +228,14 @@ NewTransactionPage() {
                 font-bold
                 text-zinc-900
               ">
-                Últimas transações
+                Últimos lançamentos
               </h2>
 
               <p className="
                 text-zinc-500
                 mt-1
               ">
-                Lançamentos recentes
+                Transações e recorrências recentes
               </p>
 
             </div>
@@ -164,13 +249,12 @@ NewTransactionPage() {
           ">
 
             {
-              recentTransactions
-                .slice(0, 8)
+              recentItems
                 .map(
-                  (transaction) => (
+                  (item) => (
 
                     <div
-                      key={transaction.id}
+                      key={`${item.kind}-${item.id}`}
 
                       className="
                         border
@@ -190,19 +274,45 @@ NewTransactionPage() {
                           text-zinc-900
                         ">
                           {
-                            transaction.description
+                            item.description
                           }
                         </p>
 
-                        <p className="
-                          text-sm
-                          text-zinc-500
-                          mt-1
+                        <div className="
+                          flex
+                          items-center
+                          gap-2
+                          mt-2
                         ">
+
+                          <span className="
+                            text-sm
+                            text-zinc-500
+                          ">
+                            {
+                              item.transactionType
+                            }
+                          </span>
+
                           {
-                            transaction.transactionType
+                            item.kind === 'RECURRING'
+                            && (
+
+                              <span className="
+                                rounded-full
+                                bg-sky-100
+                                px-2
+                                py-0.5
+                                text-xs
+                                font-medium
+                                text-sky-700
+                              ">
+                                Recorrente
+                              </span>
+                            )
                           }
-                        </p>
+
+                        </div>
 
                       </div>
 
@@ -210,7 +320,7 @@ NewTransactionPage() {
                         font-bold
 
                         ${
-                          transaction.transactionType
+                          item.transactionType
                           === 'INCOME'
 
                             ? 'text-emerald-600'
@@ -221,7 +331,7 @@ NewTransactionPage() {
                         R$
                         {
                           Number(
-                            transaction.amount
+                            item.amount
                           ).toFixed(2)
                         }
                       </p>

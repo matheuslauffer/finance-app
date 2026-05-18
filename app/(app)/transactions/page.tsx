@@ -205,98 +205,147 @@ TransactionsPage({
           transactions.map(
             (transaction) => (
 
-              <Link
+              <div
                 key={transaction.id}
 
-                href={
-                  `/transactions/${transaction.id}`
-                }
+                className="
+                  bg-white
+                  border
+                  border-zinc-200
+                  rounded-3xl
+                  p-6
+                  flex
+                  justify-between
+                  items-center
+                  hover:shadow-md
+                  transition
+                  hover:-translate-y-0.5
+                "
               >
 
-                <div
-                  className="
-                    bg-white
-                    border
-                    border-zinc-200
-                    rounded-3xl
-                    p-6
-                    flex
-                    justify-between
-                    items-center
-                    hover:shadow-md
-                    transition
-                    hover:-translate-y-0.5
-                  "
-                >
+                <div>
 
-                  <div>
+                  <Link
+                    href={
+                      `/transactions/${transaction.id}`
+                    }
+                  >
 
                     <p className="
                       text-lg
                       font-semibold
                       text-zinc-900
+                      hover:text-zinc-700
+                      transition
                     ">
                       {
                         transaction.description
                       }
                     </p>
 
-                    <p className="
-                      text-sm
-                      text-emerald-600
-                      font-medium
-                      mt-1
-                    ">
-                      {
-                        transaction.status
-                      }
-                    </p>
+                  </Link>
 
-                  </div>
+                  <p className="
+                    text-sm
+                    text-emerald-600
+                    font-medium
+                    mt-1
+                  ">
+                    {
+                      transaction.status
+                    }
+                  </p>
+
+                </div>
+
+                <div className="
+                  text-right
+                ">
+
+                  <p className="
+                    text-2xl
+                    font-bold
+                    text-zinc-900
+                  ">
+                    R$
+                    {
+                      Number(
+                        transaction.amount
+                      ).toFixed(2)
+                    }
+                  </p>
+
+                  <p className={`
+                    text-sm
+                    font-medium
+                    mt-1
+                    uppercase
+                    tracking-wide
+
+                    ${
+                      transaction.transactionType
+                      === 'INCOME'
+
+                        ? 'text-emerald-600'
+
+                        : 'text-red-500'
+                    }
+                  `}>
+                    {
+                      transaction.transactionType
+                    }
+                  </p>
 
                   <div className="
-                    text-right
+                    flex
+                    justify-end
+                    gap-4
+                    mt-3
                   ">
 
-                    <p className="
-                      text-2xl
-                      font-bold
-                      text-zinc-900
-                    ">
-                      R$
-                      {
-                        Number(
-                          transaction.amount
-                        ).toFixed(2)
-                      }
-                    </p>
+                    <Link
+                      href={`
+                        /transactions/${transaction.id}/edit
+                      `}
 
-                    <p className={`
-                      text-sm
-                      font-medium
-                      mt-1
-                      uppercase
-                      tracking-wide
+                      className="
+                        text-sm
+                        font-medium
+                        text-zinc-700
+                        hover:text-zinc-900
+                      "
+                    >
+                      Editar
+                    </Link>
 
-                      ${
-                        transaction.transactionType
-                        === 'INCOME'
+                    <form
+                      action={`
+                        /api/transactions/${transaction.id}/delete
+                      `}
 
-                          ? 'text-emerald-600'
+                      method="POST"
+                    >
 
-                          : 'text-red-500'
-                      }
-                    `}>
-                      {
-                        transaction.transactionType
-                      }
-                    </p>
+                      <button
+                        type="submit"
+
+                        className="
+                          text-sm
+                          font-medium
+                          text-red-700
+                          hover:text-red-900
+                        "
+                      >
+                        Excluir
+                      </button>
+
+                    </form>
 
                   </div>
 
                 </div>
 
-              </Link>
+              </div>
             )
           )
         }

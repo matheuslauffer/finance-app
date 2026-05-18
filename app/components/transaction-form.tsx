@@ -21,34 +21,82 @@ type Props = {
 
     name: string;
   }[];
+
+  initialData?: {
+
+    id: string;
+
+    description: string;
+
+    amount: string;
+
+    transactionType:
+      | 'INCOME'
+      | 'EXPENSE';
+
+    categoryId:
+      string;
+
+    paymentMethodId:
+      string;
+
+    effectiveDate:
+      string;
+  };
 };
 
 export function
 TransactionForm({
   categories,
   paymentMethods,
+  initialData,
 }: Props) {
 
-    const [
-  transactionType,
-  setTransactionType,
-] = useState<
-  'INCOME'
-  | 'EXPENSE'
->(
-  'EXPENSE'
-);
+  const [
+    transactionType,
+    setTransactionType,
+  ] = useState<
+    'INCOME'
+    | 'EXPENSE'
+  >(
+    initialData
+      ?.transactionType
+
+    ?? 'EXPENSE'
+  );
 
   const [
     amount,
     setAmount,
-  ] = useState('');
+  ] = useState(
+
+    initialData
+
+      ? new Intl
+          .NumberFormat(
+            'pt-BR',
+            {
+
+              style:
+                'currency',
+
+              currency:
+                'BRL',
+            }
+          )
+          .format(
+            Number(
+              initialData.amount
+            )
+          )
+
+      : ''
+  );
 
   function
   formatCurrency(
     value: string
   ) {
-    
 
     const numbers =
       value.replace(
@@ -79,6 +127,7 @@ TransactionForm({
 
     <form
       action="/api/transactions"
+
       method="POST"
 
       className="
@@ -92,6 +141,23 @@ TransactionForm({
         space-y-6
       "
     >
+
+      {
+        initialData && (
+
+          <input
+            type="hidden"
+
+            name="
+              transactionId
+            "
+
+            value={
+              initialData.id
+            }
+          />
+        )
+      }
 
       <div className="
         grid
@@ -120,6 +186,11 @@ TransactionForm({
             name="description"
 
             required
+
+            defaultValue={
+              initialData
+                ?.description
+            }
 
             placeholder="
               Ex: Mercado,
@@ -245,6 +316,11 @@ TransactionForm({
 
             required
 
+            defaultValue={
+              initialData
+                ?.categoryId
+            }
+
             className="
               border
               border-zinc-300
@@ -294,6 +370,11 @@ TransactionForm({
             name="paymentMethodId"
 
             required
+
+            defaultValue={
+              initialData
+                ?.paymentMethodId
+            }
 
             className="
               border
@@ -364,39 +445,39 @@ TransactionForm({
 
             onChange={(e) => {
 
-                setTransactionType(
+              setTransactionType(
                 e.target.value as
-                    | 'INCOME'
-                    | 'EXPENSE'
-                );
+                  | 'INCOME'
+                  | 'EXPENSE'
+              );
             }}
 
             required
 
             className={`
-                border
-                rounded-2xl
-                px-4
-                py-3
-                bg-white
-                transition
+              border
+              rounded-2xl
+              px-4
+              py-3
+              bg-white
+              transition
 
-                ${
+              ${
                 transactionType
                 === 'INCOME'
 
-                    ? `
+                  ? `
                     border-emerald-300
                     text-emerald-700
-                    `
+                  `
 
-                    : `
+                  : `
                     border-red-300
                     text-red-700
-                    `
-                }
+                  `
+              }
             `}
-            >
+          >
 
             <option value="EXPENSE">
               Despesa
@@ -431,6 +512,11 @@ TransactionForm({
 
             required
 
+            defaultValue={
+              initialData
+                ?.effectiveDate
+            }
+
             className="
               border
               border-zinc-300
@@ -449,10 +535,15 @@ TransactionForm({
       </div>
 
       <SubmitButton
-        label="
-            Salvar transação
-        "
-        />
+        label={
+          initialData
+
+            ? 'Salvar alterações'
+
+            : 'Criar transação'
+        }
+      />
+
     </form>
   );
 }

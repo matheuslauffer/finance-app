@@ -16,6 +16,11 @@ import {
   auth,
 } from '@clerk/nextjs/server';
 
+import {
+  updateFinancialOperation,
+} from '@/services/update-financial-operation-service';
+
+
 export async function GET() {
 
   const result =
@@ -34,6 +39,13 @@ export async function GET() {
 export async function POST(
   request: Request
 ) {
+
+  const body =
+  await request.json();
+
+  const transactionId =
+  body.transactionId;
+
   const { userId } = await auth();
 
   if (!userId) {
@@ -50,7 +62,42 @@ export async function POST(
   );
 }
 
-  const body = await request.json();
+/*
+UPDATE
+*/
+
+if (
+  transactionId
+) {
+
+  const updated =
+    await updateFinancialOperation({
+
+      transactionId,
+
+      paymentMethodId:
+        body.paymentMethodId,
+
+      categoryId:
+        body.categoryId,
+
+      description:
+        body.description,
+
+      amount:
+        body.amount,
+
+      transactionType:
+        body.transactionType,
+
+      effectiveDate:
+        body.effectiveDate,
+    });
+
+  return Response.json(
+    updated
+  );
+}
 
   const result =
     await createFinancialOperation({

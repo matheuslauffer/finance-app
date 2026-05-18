@@ -219,6 +219,8 @@ RecurringTransactionForm({
               outline-none
               transition
               focus:border-zinc-900
+              text-zinc-900
+              placeholder:text-zinc-400
             "
           />
 
@@ -266,6 +268,8 @@ RecurringTransactionForm({
               outline-none
               transition
               focus:border-zinc-900
+              text-zinc-900
+              placeholder:text-zinc-400
             "
           />
 
@@ -339,6 +343,8 @@ RecurringTransactionForm({
               px-4
               py-3
               bg-white
+              text-zinc-900
+              placeholder:text-zinc-400
             "
           >
 
@@ -403,6 +409,8 @@ RecurringTransactionForm({
               py-3
               bg-white
               transition
+              text-zinc-900
+              placeholder:text-zinc-400
 
               ${
                 transactionType
@@ -526,6 +534,8 @@ RecurringTransactionForm({
               px-4
               py-3
               bg-white
+              text-zinc-900
+              placeholder:text-zinc-400
             "
           >
 
@@ -590,6 +600,8 @@ RecurringTransactionForm({
               px-4
               py-3
               bg-white
+              text-zinc-900
+              placeholder:text-zinc-400
             "
           />
 
@@ -627,6 +639,8 @@ RecurringTransactionForm({
               px-4
               py-3
               bg-white
+              text-zinc-900
+              placeholder:text-zinc-400
             "
           />
 

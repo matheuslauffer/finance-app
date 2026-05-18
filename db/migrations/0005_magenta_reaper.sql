@@ -1,0 +1,1 @@
+ALTER TABLE "payment_methods" ADD COLUMN "type" text NOT NULL;

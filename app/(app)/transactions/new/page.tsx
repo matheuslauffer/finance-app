@@ -12,6 +12,14 @@ import {
   getTransactionFormData,
 } from '@/services/transaction-form-service';
 
+import {
+  TransactionForm,
+} from '@/app/components/transaction-form';
+
+import {
+  getTransactions,
+} from '@/services/transaction-service';
+
 export default async function
 NewTransactionPage() {
 
@@ -30,6 +38,12 @@ NewTransactionPage() {
     await getTransactionFormData(
       userId
     );
+
+  const recentTransactions =
+    await getTransactions({
+
+      userId,
+    });
 
   return (
 
@@ -78,6 +92,7 @@ NewTransactionPage() {
             hover:bg-zinc-50
             transition
             font-medium
+            text-zinc-900
           "
         >
           Voltar
@@ -85,326 +100,142 @@ NewTransactionPage() {
 
       </div>
 
-      <form
-        action="/api/transactions"
-        method="POST"
+      <div className="
+        grid
+        grid-cols-1
+        xl:grid-cols-[700px_1fr]
+        gap-8
+        items-start
+      ">
 
-        className="
+        <TransactionForm
+
+          categories={
+            formData.categories
+          }
+
+          paymentMethods={
+            formData.paymentMethods
+          }
+        />
+
+        <div className="
           bg-white
           border
           border-zinc-200
           rounded-3xl
-          p-8
+          p-6
           shadow-sm
-          max-w-3xl
-          space-y-6
-        "
-      >
-
-        <div className="
-          grid
-          grid-cols-1
-          md:grid-cols-2
-          gap-6
+          min-h-[400px]
         ">
 
           <div className="
             flex
-            flex-col
-            gap-2
+            items-center
+            justify-between
+            mb-6
           ">
 
-            <label className="
-              text-sm
-              font-medium
-              text-zinc-700
-            ">
-              Descrição
-            </label>
+            <div>
 
-            <input
-              type="text"
+              <h2 className="
+                text-2xl
+                font-bold
+                text-zinc-900
+              ">
+                Últimas transações
+              </h2>
 
-              name="description"
+              <p className="
+                text-zinc-500
+                mt-1
+              ">
+                Lançamentos recentes
+              </p>
 
-              required
-
-              placeholder="
-                Ex: Mercado, salário...
-              "
-
-              className="
-                border
-                border-zinc-300
-                rounded-2xl
-                px-4
-                py-3
-                bg-white
-                outline-none
-              "
-            />
+            </div>
 
           </div>
 
           <div className="
             flex
             flex-col
-            gap-2
+            gap-3
           ">
 
-            <label className="
-              text-sm
-              font-medium
-              text-zinc-700
-            ">
-              Valor
-            </label>
+            {
+              recentTransactions
+                .slice(0, 8)
+                .map(
+                  (transaction) => (
 
-            <input
-              type="number"
+                    <div
+                      key={transaction.id}
 
-              step="0.01"
-
-              name="amount"
-
-              required
-
-              placeholder="
-                0.00
-              "
-
-              className="
-                border
-                border-zinc-300
-                rounded-2xl
-                px-4
-                py-3
-                bg-white
-                outline-none
-              "
-            />
-
-          </div>
-
-        </div>
-
-        <div className="
-          grid
-          grid-cols-1
-          md:grid-cols-2
-          gap-6
-        ">
-
-          <div className="
-            flex
-            flex-col
-            gap-2
-          ">
-
-            <label className="
-              text-sm
-              font-medium
-              text-zinc-700
-            ">
-              Categoria
-            </label>
-
-            <select
-              name="categoryId"
-
-              required
-
-              className="
-                border
-                border-zinc-300
-                rounded-2xl
-                px-4
-                py-3
-                bg-white
-              "
-            >
-
-              {
-                formData.categories.map(
-                  (category) => (
-
-                    <option
-                      key={category.id}
-
-                      value={category.id}
+                      className="
+                        border
+                        border-zinc-200
+                        rounded-2xl
+                        p-4
+                        flex
+                        items-center
+                        justify-between
+                      "
                     >
-                      {category.name}
-                    </option>
+
+                      <div>
+
+                        <p className="
+                          font-semibold
+                          text-zinc-900
+                        ">
+                          {
+                            transaction.description
+                          }
+                        </p>
+
+                        <p className="
+                          text-sm
+                          text-zinc-500
+                          mt-1
+                        ">
+                          {
+                            transaction.transactionType
+                          }
+                        </p>
+
+                      </div>
+
+                      <p className={`
+                        font-bold
+
+                        ${
+                          transaction.transactionType
+                          === 'INCOME'
+
+                            ? 'text-emerald-600'
+
+                            : 'text-red-500'
+                        }
+                      `}>
+                        R$
+                        {
+                          Number(
+                            transaction.amount
+                          ).toFixed(2)
+                        }
+                      </p>
+
+                    </div>
                   )
                 )
-              }
-
-            </select>
-
-          </div>
-
-          <div className="
-            flex
-            flex-col
-            gap-2
-          ">
-
-            <label className="
-              text-sm
-              font-medium
-              text-zinc-700
-            ">
-              Método de pagamento
-            </label>
-
-            <select
-              name="paymentMethodId"
-
-              required
-
-              className="
-                border
-                border-zinc-300
-                rounded-2xl
-                px-4
-                py-3
-                bg-white
-              "
-            >
-
-              {
-                formData
-                  .paymentMethods
-                  .map(
-                    (
-                      paymentMethod
-                    ) => (
-
-                      <option
-                        key={
-                          paymentMethod.id
-                        }
-
-                        value={
-                          paymentMethod.id
-                        }
-                      >
-                        {
-                          paymentMethod.name
-                        }
-                      </option>
-                    )
-                  )
-              }
-
-            </select>
+            }
 
           </div>
 
         </div>
 
-        <div className="
-          grid
-          grid-cols-1
-          md:grid-cols-2
-          gap-6
-        ">
-
-          <div className="
-            flex
-            flex-col
-            gap-2
-          ">
-
-            <label className="
-              text-sm
-              font-medium
-              text-zinc-700
-            ">
-              Tipo
-            </label>
-
-            <select
-              name="transactionType"
-
-              required
-
-              className="
-                border
-                border-zinc-300
-                rounded-2xl
-                px-4
-                py-3
-                bg-white
-              "
-            >
-
-              <option value="EXPENSE">
-                Despesa
-              </option>
-
-              <option value="INCOME">
-                Receita
-              </option>
-
-            </select>
-
-          </div>
-
-          <div className="
-            flex
-            flex-col
-            gap-2
-          ">
-
-            <label className="
-              text-sm
-              font-medium
-              text-zinc-700
-            ">
-              Data
-            </label>
-
-            <input
-              type="date"
-
-              name="effectiveDate"
-
-              required
-
-              className="
-                border
-                border-zinc-300
-                rounded-2xl
-                px-4
-                py-3
-                bg-white
-                outline-none
-              "
-            />
-
-          </div>
-
-        </div>
-
-        <button
-          type="submit"
-
-          className="
-            bg-zinc-900
-            text-white
-            px-6
-            py-3
-            rounded-2xl
-            hover:bg-zinc-800
-            transition
-            font-medium
-          "
-        >
-          Salvar transação
-        </button>
-
-      </form>
+      </div>
 
     </main>
   );

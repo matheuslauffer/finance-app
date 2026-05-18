@@ -35,5 +35,16 @@ export const paymentMethods = pgTable(
     createdAt: timestamp('created_at')
       .defaultNow()
       .notNull(),
+
+    type: text('type')
+      .$type<
+        | 'CREDIT_CARD'
+        | 'DEBIT_CARD'
+        | 'PIX'
+        | 'CASH'
+        | 'BANK_TRANSFER'
+      >()
+    .notNull(),
+
   }
 );

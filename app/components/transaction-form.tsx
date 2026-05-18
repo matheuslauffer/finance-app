@@ -205,9 +205,11 @@ TransactionForm({
               px-4
               py-3
               bg-white
-              outline-none
-              transition
-              focus:border-zinc-900
+              text-zinc-900
+              placeholder:text-zinc-400
+              appearance-none
+              opacity-100
+              font-medium
             "
           />
 
@@ -252,9 +254,11 @@ TransactionForm({
               px-4
               py-3
               bg-white
-              outline-none
-              transition
-              focus:border-zinc-900
+              text-zinc-900
+              placeholder:text-zinc-400
+              appearance-none
+              opacity-100
+              font-medium
             "
           />
 
@@ -328,8 +332,10 @@ TransactionForm({
               px-4
               py-3
               bg-white
-              transition
-              focus:border-zinc-900
+              text-zinc-900
+              placeholder:text-zinc-400
+              appearance-none
+              opacity-100
             "
           >
 
@@ -383,8 +389,10 @@ TransactionForm({
               px-4
               py-3
               bg-white
-              transition
-              focus:border-zinc-900
+              text-zinc-900
+              placeholder:text-zinc-400
+              appearance-none
+              opacity-100
             "
           >
 
@@ -456,11 +464,16 @@ TransactionForm({
 
             className={`
               border
+              border-zinc-300
               rounded-2xl
               px-4
               py-3
               bg-white
-              transition
+              text-zinc-900
+              placeholder:text-zinc-400
+              appearance-none
+              opacity-100
+              font-medium
 
               ${
                 transactionType
@@ -524,9 +537,10 @@ TransactionForm({
               px-4
               py-3
               bg-white
-              outline-none
-              transition
-              focus:border-zinc-900
+              text-zinc-900
+              placeholder:text-zinc-400
+              appearance-none
+              opacity-100
             "
           />
 

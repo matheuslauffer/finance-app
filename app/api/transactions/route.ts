@@ -2,6 +2,10 @@ import {
   createFinancialOperation,
 } from '@/services/financial-operation-service';
 
+import {
+  updateFinancialOperation,
+} from '@/services/update-financial-operation-service';
+
 import { db } from '@/db';
 
 import {
@@ -15,11 +19,6 @@ import {
 import {
   auth,
 } from '@clerk/nextjs/server';
-
-import {
-  updateFinancialOperation,
-} from '@/services/update-financial-operation-service';
-
 
 export async function GET() {
 
@@ -40,99 +39,144 @@ export async function POST(
   request: Request
 ) {
 
-  const body =
-  await request.json();
+  const formData =
+    await request.formData();
 
   const transactionId =
-  body.transactionId;
+    formData.get(
+      'transactionId'
+    ) as string | null;
 
-  const { userId } = await auth();
+  const { userId } =
+    await auth();
 
   if (!userId) {
 
-  return Response.json(
-    {
-      error:
-        'Unauthorized',
-    },
+    return Response.json(
+      {
+        error:
+          'Unauthorized',
+      },
 
-    {
-      status: 401,
-    }
-  );
-}
+      {
+        status: 401,
+      }
+    );
+  }
 
-/*
-UPDATE
-*/
+  /*
+  UPDATE
+  */
 
-if (
-  transactionId
-) {
+  if (
+    transactionId
+  ) {
 
-  const updated =
-    await updateFinancialOperation({
+    const updated =
+      await updateFinancialOperation({
 
-      transactionId,
+        transactionId,
 
-      paymentMethodId:
-        body.paymentMethodId,
+        paymentMethodId:
+          formData.get(
+            'paymentMethodId'
+          ) as string,
 
-      categoryId:
-        body.categoryId,
+        categoryId:
+          formData.get(
+            'categoryId'
+          ) as string,
 
-      description:
-        body.description,
+        description:
+          formData.get(
+            'description'
+          ) as string,
 
-      amount:
-        body.amount,
+        amount:
+          formData.get(
+            'amount'
+          ) as string,
 
-      transactionType:
-        body.transactionType,
+        transactionType:
+          formData.get(
+            'transactionType'
+          ) as
+            | 'INCOME'
+            | 'EXPENSE',
 
-      effectiveDate:
-        body.effectiveDate,
-    });
+        effectiveDate:
+          formData.get(
+            'effectiveDate'
+          ) as string,
+      });
 
-  return Response.json(
-    updated
-  );
-}
+    return Response.json(
+      updated
+    );
+  }
+
+  /*
+  CREATE
+  */
 
   const result =
     await createFinancialOperation({
-      userId: userId,
+
+      userId,
 
       paymentMethodId:
-        body.paymentMethodId,
+        formData.get(
+          'paymentMethodId'
+        ) as string,
 
       categoryId:
-        body.categoryId,
+        formData.get(
+          'categoryId'
+        ) as string,
 
       description:
-        body.description,
+        formData.get(
+          'description'
+        ) as string,
 
       amount:
-        body.amount,
+        formData.get(
+          'amount'
+        ) as string,
 
       operationType:
-        body.operationType,
+        'PURCHASE',
 
       transactionType:
-        body.transactionType,
+        formData.get(
+          'transactionType'
+        ) as
+          | 'INCOME'
+          | 'EXPENSE',
 
       status:
-        body.status,
+        'CONFIRMED',
 
       occurredAt:
-        new Date(body.occurredAt),
+        new Date(
+          formData.get(
+            'effectiveDate'
+          ) as string
+        ),
 
       effectiveDate:
-        body.effectiveDate,
+        formData.get(
+          'effectiveDate'
+        ) as string,
 
       installmentCount:
-        body.installmentCount,
+        1,
     });
 
-  return Response.json(result);
+  return Response.redirect(
+    new URL(
+      '/transactions/new',
+      request.url
+    )
+  );
 }

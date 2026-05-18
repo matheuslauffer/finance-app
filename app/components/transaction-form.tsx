@@ -492,14 +492,6 @@ TransactionForm({
     gap-2
   ">
 
-    <label className="
-      text-sm
-      font-medium
-      text-zinc-700
-    ">
-      Parcelamento
-    </label>
-
     <select
       value={installmentMode}
 

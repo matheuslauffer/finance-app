@@ -40,6 +40,13 @@ export const paymentMethods = pgTable(
     isActive: 
       boolean('is_active')
         .notNull()
-        .default(true)
-  }
+        .default(true),
+
+    supportsInstallments:
+      boolean(
+        'supports_installments'
+      )
+        .notNull()
+        .default(false),
+      }
 );

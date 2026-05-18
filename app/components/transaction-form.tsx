@@ -20,6 +20,9 @@ type Props = {
     id: string;
 
     name: string;
+
+    supportsInstallments:
+      boolean;
   }[];
 
   initialData?: {
@@ -64,6 +67,34 @@ TransactionForm({
 
     ?? 'EXPENSE'
   );
+
+  const [
+    selectedPaymentMethodId,
+    setSelectedPaymentMethodId,
+  ] = useState(
+
+    initialData
+      ?.paymentMethodId
+
+    ?? paymentMethods[0]?.id
+  );
+
+  const [
+    installmentMode,
+    setInstallmentMode,
+  ] = useState('1');
+
+  const selectedPaymentMethod =
+    paymentMethods.find(
+      (method) => {
+
+        return (
+          method.id
+          ===
+          selectedPaymentMethodId
+        );
+      }
+    );
 
   const [
     amount,
@@ -377,10 +408,16 @@ TransactionForm({
 
             required
 
-            defaultValue={
-              initialData
-                ?.paymentMethodId
+            value={
+              selectedPaymentMethodId
             }
+
+            onChange={(e) => {
+
+              setSelectedPaymentMethodId(
+                e.target.value
+              );
+            }}
 
             className="
               border
@@ -424,6 +461,154 @@ TransactionForm({
         </div>
 
       </div>
+
+      {
+        selectedPaymentMethod
+          ?.supportsInstallments && (
+
+          <div className="
+            flex
+            flex-col
+            gap-2
+          ">
+
+            <label className="
+              text-sm
+              font-medium
+              text-zinc-700
+            ">
+              Parcelamento
+            </label>
+
+            <div className="
+  flex
+  flex-col
+  gap-4
+">
+
+  <div className="
+    flex
+    flex-col
+    gap-2
+  ">
+
+    <label className="
+      text-sm
+      font-medium
+      text-zinc-700
+    ">
+      Parcelamento
+    </label>
+
+    <select
+      value={installmentMode}
+
+      onChange={(e) => {
+
+        setInstallmentMode(
+          e.target.value
+        );
+      }}
+
+      name="
+        installmentCount
+      "
+
+      className="
+        border
+        border-zinc-300
+        rounded-2xl
+        px-4
+        py-3
+        bg-white
+        text-zinc-900
+      "
+    >
+
+      {
+        Array.from({
+          length: 12,
+        }).map(
+          (_, index) => {
+
+            const value =
+              String(index + 1);
+
+            return (
+
+              <option
+                key={value}
+
+                value={value}
+              >
+                {value}x
+              </option>
+            );
+          }
+        )
+      }
+
+      <option value="custom">
+        Outro...
+      </option>
+
+    </select>
+
+  </div>
+
+  {
+    installmentMode
+    === 'custom' && (
+
+      <div className="
+        flex
+        flex-col
+        gap-2
+      ">
+
+        <label className="
+          text-sm
+          font-medium
+          text-zinc-700
+        ">
+          Quantidade de parcelas
+        </label>
+
+        <input
+          type="number"
+
+          min="1"
+
+          max="999"
+
+          name="
+            customInstallmentCount
+          "
+
+          placeholder="
+            Ex: 18
+          "
+
+          className="
+            border
+            border-zinc-300
+            rounded-2xl
+            px-4
+            py-3
+            bg-white
+            text-zinc-900
+          "
+        />
+
+      </div>
+    )
+  }
+
+</div>
+
+          </div>
+        )
+      }
 
       <div className="
         grid

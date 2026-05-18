@@ -63,7 +63,12 @@ POST(
     methodType:
       formData.get(
         'type'
-      ) as PaymentMethodType
+      ) as PaymentMethodType,
+
+    supportsInstallments:
+      formData.get(
+        'supportsInstallments'
+      ) === 'on',
   });
 
   return NextResponse.redirect(

@@ -198,6 +198,29 @@ NewPaymentMethodPage() {
 
           </select>
 
+          <label className="
+            flex
+            items-center
+            gap-3
+            ">
+
+            <input
+                type="checkbox"
+
+                name="
+                supportsInstallments
+                "
+            />
+
+            <span className="
+                text-sm
+                text-zinc-700
+            ">
+                Permite parcelamento
+            </span>
+
+            </label>
+
         </div>
 
         <button

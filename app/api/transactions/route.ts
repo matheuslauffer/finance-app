@@ -65,6 +65,30 @@ export async function POST(
   }
 
   /*
+  INSTALLMENTS
+  */
+
+  const installmentCount =
+
+    formData.get(
+      'installmentCount'
+    ) === 'custom'
+
+      ? Number(
+
+          formData.get(
+            'customInstallmentCount'
+          )
+        )
+
+      : Number(
+
+          formData.get(
+            'installmentCount'
+          ) ?? 1
+        );
+
+  /*
   UPDATE
   */
 
@@ -145,7 +169,11 @@ export async function POST(
         ) as string,
 
       operationType:
-        'PURCHASE',
+        installmentCount > 1
+
+          ? 'INSTALLMENT_PURCHASE'
+
+          : 'PURCHASE',
 
       transactionType:
         formData.get(
@@ -169,8 +197,7 @@ export async function POST(
           'effectiveDate'
         ) as string,
 
-      installmentCount:
-        1,
+      installmentCount,
     });
 
   return Response.redirect(

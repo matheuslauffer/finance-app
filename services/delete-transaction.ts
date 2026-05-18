@@ -12,6 +12,22 @@ import {
   recalculateFinancialMonth,
 } from './recalculate-financial-month';
 
+import {
+  inArray,
+} from 'drizzle-orm';
+
+import {
+  financialOperations,
+} from '@/db/schema/financial-operations';
+
+import {
+  installmentPlans,
+} from '@/db/schema/installment-plans';
+
+import {
+  installments,
+} from '@/db/schema/installments';
+
 export async function
 deleteTransaction(
   transactionId: string

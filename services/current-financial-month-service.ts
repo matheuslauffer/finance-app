@@ -41,5 +41,34 @@ getCurrentFinancialMonth(
         )
       );
 
-  return month ?? null;
+    if (month) {
+
+    return month;
+  }
+
+  const [createdMonth] =
+    await db
+      .insert(financialMonths)
+      .values({
+
+        userId,
+
+        referenceMonth:
+          currentMonth,
+
+        projectedIncome:
+          '0',
+
+        projectedExpense:
+          '0',
+
+        projectedBalance:
+          '0',
+
+        committedAmount:
+          '0',
+      })
+      .returning();
+
+  return createdMonth;
 }

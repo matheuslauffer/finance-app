@@ -2,7 +2,8 @@ import {
   pgTable,
   uuid,
   date,
-  text
+  text,
+  numeric
 } from 'drizzle-orm/pg-core';
 
 import { users }
@@ -23,5 +24,33 @@ export const financialMonths =
       referenceMonth:
         date('reference_month')
           .notNull(),
-    }
+
+      projectedIncome:
+        numeric(
+          'projected_income'
+        )
+          .notNull()
+          .default('0'),
+
+        projectedExpense:
+          numeric(
+            'projected_expense'
+          )
+            .notNull()
+            .default('0'),
+
+          projectedBalance:
+            numeric(
+              'projected_balance'
+            )
+              .notNull()
+              .default('0'),
+
+          committedAmount:
+            numeric(
+              'committed_amount'
+            )
+              .notNull()
+              .default('0'),
+      }
   );

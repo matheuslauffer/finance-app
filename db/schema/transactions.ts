@@ -90,5 +90,11 @@ export const transactions = pgTable(
     )
       .defaultNow()
       .notNull(),
+
+    recurringTransactionId:
+    text(
+      'recurring_transaction_id'
+    ),
   }
+
 );

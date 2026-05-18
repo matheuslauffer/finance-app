@@ -8,6 +8,34 @@
       "when": 1778532679833,
       "tag": "0000_conscious_preak",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1779048455479,
+      "tag": "0001_workable_cassandra_nova",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779054750567,
+      "tag": "0002_tricky_starjammers",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1779056421285,
+      "tag": "0003_perpetual_spiral",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1779060308272,
+      "tag": "0004_needy_centennial",
+      "breakpoints": true
     }
   ]
 }

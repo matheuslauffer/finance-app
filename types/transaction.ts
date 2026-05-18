@@ -9,5 +9,5 @@ export type Transaction = {
 
   status: string;
 
-  createdAt: string;
+  createdAt: Date;
 };

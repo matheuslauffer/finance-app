@@ -7,7 +7,7 @@ const isProtectedRoute =
   createRouteMatcher([
     '/dashboard(.*)',
     '/transactions(.*)',
-    '/api/transactions(.*)',
+    '/import(.*)',
   ]);
 
 export default clerkMiddleware(
@@ -19,6 +19,10 @@ export default clerkMiddleware(
 
       await auth.protect();
     }
+  },
+
+  {
+    clockSkewInMs: 15000,
   }
 );
 

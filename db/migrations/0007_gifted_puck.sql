@@ -1,1 +1,0 @@
-ALTER TABLE "payment_methods" ADD COLUMN "is_active" boolean DEFAULT true NOT NULL;

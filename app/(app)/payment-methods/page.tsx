@@ -88,85 +88,50 @@ PaymentMethodsPage() {
       </div>
 
       <div className="
-        grid
-        grid-cols-1
-        md:grid-cols-2
-        xl:grid-cols-3
-        gap-6
+        bg-white
+        border
+        border-zinc-200
+        rounded-3xl
+        overflow-hidden
       ">
 
         {
-          paymentMethods.map(
-            (method) => (
+  paymentMethods.map(
+    (method) => (
 
-              <div
-                key={method.id}
+      <div
+        key={method.id}
 
-                className="
-                  bg-white
-                  border
-                  border-zinc-200
-                  rounded-3xl
-                  p-6
-                  shadow-sm
-                "
-              >
+        className="
+          flex
+          items-center
+          justify-between
+          px-6
+          py-5
+          border-b
+          border-zinc-100
+          last:border-b-0
+        "
+      >
 
-                <h2 className="
-                  text-xl
-                  font-bold
-                  text-zinc-900
-                ">
-                  {method.name}
-                </h2>
+        <div>
 
-                <p className="
-                  text-zinc-500
-                  mt-2
-                ">
-                  {method.methodType}
-                </p>
+          <p className="
+            font-semibold
+            text-zinc-900
+          ">
+            {method.name}
+          </p>
 
-                <div className="
-                    mt-4
-                    flex
-                    items-center
-                    justify-between
-                    ">
+          <p className="
+            text-sm
+            text-zinc-500
+            mt-1
+          ">
+            {method.methodType}
+          </p>
 
-                    <span className={`
-                        text-xs
-                        font-semibold
-                        px-3
-                        py-1
-                        rounded-full
-
-                        ${
-                        method.isActive
-
-                            ? `
-                            bg-emerald-100
-                            text-emerald-700
-                            `
-
-                            : `
-                            bg-zinc-200
-                            text-zinc-600
-                            `
-                        }
-                    `}>
-
-                        {
-                        method.isActive
-
-                            ? 'Ativo'
-
-                            : 'Inativo'
-                        }
-
-                    </span>
-
-                    </div>
+        </div>
 
                     <form
                         action={`
@@ -179,23 +144,48 @@ PaymentMethodsPage() {
                         <button
                             type="submit"
 
-                            className="
-                            mt-4
-                            text-sm
-                            font-medium
-                            text-zinc-700
-                            hover:text-zinc-900
-                            transition
-                            "
+                            className={`
+                            relative
+                            w-14
+                            h-8
+                            rounded-full
+                            transition-all
+                            duration-300
+
+                            ${
+                                method.isActive
+
+                                ? `
+                                    bg-emerald-500
+                                `
+
+                                : `
+                                    bg-red-500
+                                `
+                            }
+                            `}
                         >
 
-                            {
-                            method.isActive
+                            <span
+                            className={`
+                                absolute
+                                top-1
+                                w-6
+                                h-6
+                                rounded-full
+                                bg-white
+                                transition-all
+                                duration-300
 
-                                ? 'Desativar'
+                                ${
+                                method.isActive
 
-                                : 'Ativar'
-                            }
+                                    ? 'left-7'
+
+                                    : 'left-1'
+                                }
+                            `}
+                            />
 
                         </button>
 

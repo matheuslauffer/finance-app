@@ -1,7 +1,7 @@
 CREATE TYPE "public"."account_type" AS ENUM('CHECKING', 'SAVINGS', 'DIGITAL_WALLET', 'CASH', 'INVESTMENT');--> statement-breakpoint
 CREATE TYPE "public"."installment_status" AS ENUM('PENDING', 'PAID', 'CANCELLED', 'ANTICIPATED');--> statement-breakpoint
 CREATE TYPE "public"."operation_type" AS ENUM('PURCHASE', 'PIX_CREDIT', 'BOLETO_CREDIT', 'INSTALLMENT_PURCHASE', 'FINANCING', 'TRANSFER');--> statement-breakpoint
-CREATE TYPE "public"."payment_method_type" AS ENUM('PIX', 'DEBIT', 'CREDIT', 'BOLETO', 'BANK_TRANSFER', 'CREDIT_LINE');--> statement-breakpoint
+CREATE TYPE "public"."payment_method_type" AS ENUM('PIX', 'DEBIT', 'CREDIT_CARD', 'BOLETO', 'BANK_TRANSFER', 'CREDIT_LINE');--> statement-breakpoint
 CREATE TYPE "public"."recurrence_frequency" AS ENUM('DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY');--> statement-breakpoint
 CREATE TYPE "public"."transaction_status" AS ENUM('PROJECTED', 'CONFIRMED', 'CANCELLED');--> statement-breakpoint
 CREATE TYPE "public"."transaction_type" AS ENUM('INCOME', 'EXPENSE', 'TRANSFER', 'ADJUSTMENT');--> statement-breakpoint
@@ -28,7 +28,11 @@ CREATE TABLE "categories" (
 CREATE TABLE "financial_months" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" text NOT NULL,
-	"reference_month" date NOT NULL
+	"reference_month" date NOT NULL,
+	"projected_income" numeric DEFAULT '0' NOT NULL,
+	"projected_expense" numeric DEFAULT '0' NOT NULL,
+	"projected_balance" numeric DEFAULT '0' NOT NULL,
+	"committed_amount" numeric DEFAULT '0' NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "financial_operations" (
@@ -82,7 +86,8 @@ CREATE TABLE "payment_methods" (
 	"method_type" "payment_method_type" NOT NULL,
 	"closing_day" integer,
 	"due_day" integer,
-	"created_at" timestamp DEFAULT now() NOT NULL
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"is_active" boolean DEFAULT true NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "recurrences" (
@@ -95,6 +100,22 @@ CREATE TABLE "recurrences" (
 	"frequency" "recurrence_frequency" NOT NULL,
 	"next_occurrence" date NOT NULL,
 	"is_active" boolean DEFAULT true NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "recurring_transactions" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" text NOT NULL,
+	"description" text NOT NULL,
+	"amount" numeric NOT NULL,
+	"transaction_type" text NOT NULL,
+	"frequency" text NOT NULL,
+	"status" text DEFAULT 'ACTIVE' NOT NULL,
+	"effective_from" date NOT NULL,
+	"effective_until" date,
+	"category_id" text NOT NULL,
+	"payment_method_id" text NOT NULL,
+	"parent_recurring_transaction_id" text,
+	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "transactions" (
@@ -111,7 +132,8 @@ CREATE TABLE "transactions" (
 	"status" "transaction_status" NOT NULL,
 	"occurred_at" timestamp NOT NULL,
 	"effective_date" date NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"recurring_transaction_id" text
 );
 --> statement-breakpoint
 CREATE TABLE "users" (

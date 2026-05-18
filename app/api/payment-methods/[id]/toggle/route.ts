@@ -28,6 +28,10 @@ POST(
   const { id } =
     await params;
 
+  /*
+  GET CURRENT METHOD
+  */
+
   const [method] =
     await db
 
@@ -50,7 +54,7 @@ POST(
 
       {
         error:
-          'Not found',
+          'Payment method not found',
       },
 
       {
@@ -58,6 +62,10 @@ POST(
       }
     );
   }
+
+  /*
+  TOGGLE ACTIVE
+  */
 
   await db
 
@@ -77,6 +85,10 @@ POST(
         id
       )
     );
+
+  /*
+  REDIRECT
+  */
 
   return NextResponse.redirect(
 

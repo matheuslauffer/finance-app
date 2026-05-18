@@ -7,6 +7,7 @@ import {
 import {
   eq,
   asc,
+  desc
 } from 'drizzle-orm';
 
 export async function
@@ -30,6 +31,11 @@ getPaymentMethods(
     )
 
     .orderBy(
+
+        desc(
+            paymentMethods.isActive
+        ),
+
       asc(
         paymentMethods.name
       )

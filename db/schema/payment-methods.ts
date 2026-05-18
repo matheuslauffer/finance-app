@@ -37,6 +37,9 @@ export const paymentMethods = pgTable(
       .defaultNow()
       .notNull(),
 
-    isActive: boolean('is_active').notNull().default(true)
+    isActive: 
+      boolean('is_active')
+        .notNull()
+        .default(true)
   }
 );

@@ -1,10 +1,10 @@
 import {
-  getTransactionById,
-} from '@/services/get-transaction-by-id';
-
-import {
   DeleteTransactionButton,
 } from '../../../components/delete-transaction-button';
+
+import {
+  getTransactionDetails,
+} from '@/services/transaction-details-service';
 
 type Props = {
   params: Promise<{
@@ -20,14 +20,17 @@ TransactionDetailsPage({
   const { id } =
     await params;
 
-  const transaction =
-    await getTransactionById(
-      id
-    );
+  const details =
+    await getTransactionDetails({
 
-  if (!transaction) {
+      transactionId:
+        id,
+    });
+
+  if (!details) {
 
     return (
+
       <main className="
         p-10
       ">
@@ -35,6 +38,9 @@ TransactionDetailsPage({
       </main>
     );
   }
+
+  const transaction =
+    details.transaction;
 
   return (
 
@@ -80,29 +86,29 @@ TransactionDetailsPage({
 
           <a
             href={
-                `/transactions/${transaction.id}/edit`
+              `/transactions/${transaction.id}/edit`
             }
 
             className="
-                px-5
-                py-3
-                rounded-2xl
-                border
-                border-zinc-200
-                bg-white
-                hover:bg-zinc-50
-                transition
-                font-medium
+              px-5
+              py-3
+              rounded-2xl
+              border
+              border-zinc-200
+              bg-white
+              hover:bg-zinc-50
+              transition
+              font-medium
             "
-            >
+          >
             Editar
-            </a>
+          </a>
 
           <DeleteTransactionButton
             transactionId={
-                transaction.id
+              transaction.id
             }
-            />
+          />
 
         </div>
 
@@ -140,54 +146,10 @@ TransactionDetailsPage({
               font-bold
               text-zinc-900
             ">
-              R$
-              {
-                transaction.amount
-              }
-            </p>
-
-          </div>
-
-          <div>
-
-            <p className="
-              text-sm
-              text-zinc-500
-              mb-1
-            ">
-              Categoria
-            </p>
-
-            <p className="
-              text-lg
-              font-medium
-              text-zinc-900
-            ">
-              {
-                transaction.categoryName
-              }
-            </p>
-
-          </div>
-
-          <div>
-
-            <p className="
-              text-sm
-              text-zinc-500
-              mb-1
-            ">
-              Método pagamento
-            </p>
-
-            <p className="
-              text-lg
-              font-medium
-              text-zinc-900
-            ">
-              {
-                transaction
-                  .paymentMethodName
+              R$ {
+                Number(
+                  transaction.amount
+                ).toFixed(2)
               }
             </p>
 
@@ -224,12 +186,20 @@ TransactionDetailsPage({
               Tipo
             </p>
 
-            <p className="
-              text-red-500
+            <p className={`
               font-medium
               uppercase
               tracking-wide
-            ">
+
+              ${
+                transaction.transactionType
+                === 'INCOME'
+
+                  ? 'text-emerald-600'
+
+                  : 'text-red-500'
+              }
+            `}>
               {
                 transaction
                   .transactionType
@@ -264,6 +234,144 @@ TransactionDetailsPage({
         </div>
 
       </div>
+
+      {
+        details.installmentPlan && (
+
+          <div className="
+            mt-8
+            bg-white
+            border
+            border-zinc-200
+            rounded-3xl
+            p-8
+            shadow-sm
+          ">
+
+            <div className="
+              mb-6
+            ">
+
+              <h2 className="
+                text-2xl
+                font-bold
+                text-zinc-900
+              ">
+                Parcelamento
+              </h2>
+
+              <p className="
+                text-zinc-500
+                mt-1
+              ">
+                {
+                  details
+                    .installmentPlan
+                    .installmentCount
+                }x de R$ {
+
+                  Number(
+                    details
+                      .installmentPlan
+                      .installmentAmount
+                  ).toFixed(2)
+                }
+              </p>
+
+            </div>
+
+            <div className="
+              flex
+              flex-col
+              gap-3
+            ">
+
+              {
+                details.installments.map(
+                  (installment) => (
+
+                    <div
+                      key={installment.id}
+
+                      className="
+                        flex
+                        items-center
+                        justify-between
+                        border
+                        border-zinc-200
+                        rounded-2xl
+                        px-5
+                        py-4
+                      "
+                    >
+
+                      <div>
+
+                        <p className="
+                          font-semibold
+                          text-zinc-900
+                        ">
+                          Parcela {
+
+                            installment
+                              .installmentNumber
+                          }
+                        </p>
+
+                        <p className="
+                          text-sm
+                          text-zinc-500
+                          mt-1
+                        ">
+                          Vencimento:
+                          {' '}
+                          {
+                            installment
+                              .dueDate
+                          }
+                        </p>
+
+                      </div>
+
+                      <div className="
+                        text-right
+                      ">
+
+                        <p className="
+                          font-bold
+                          text-zinc-900
+                        ">
+                          R$ {
+
+                            Number(
+                              installment.amount
+                            ).toFixed(2)
+                          }
+                        </p>
+
+                        <p className="
+                          text-sm
+                          text-amber-600
+                          font-medium
+                          mt-1
+                        ">
+                          {
+                            installment.status
+                          }
+                        </p>
+
+                      </div>
+
+                    </div>
+                  )
+                )
+              }
+
+            </div>
+
+          </div>
+        )
+      }
 
     </main>
   );

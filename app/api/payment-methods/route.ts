@@ -69,6 +69,34 @@ POST(
       formData.get(
         'supportsInstallments'
       ) === 'on',
+
+    closingDay:
+
+  formData.get(
+    'closingDay'
+  )
+
+    ? Number(
+        formData.get(
+          'closingDay'
+        )
+      )
+
+    : null,
+
+dueDay:
+
+  formData.get(
+    'dueDay'
+  )
+
+    ? Number(
+        formData.get(
+          'dueDay'
+        )
+      )
+
+    : null,
   });
 
   return NextResponse.redirect(

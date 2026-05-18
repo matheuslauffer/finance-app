@@ -9,27 +9,33 @@ import {
 } from '@/db/schema/payment-methods';
 
 import {
-  eq,
   and,
+  eq,
 } from 'drizzle-orm';
-
-import {
-  getFinancialMonthDate,
-} from '@/lib/financial-month';
 
 export async function
 resolveFinancialMonth(
+
   userId: string,
+
   paymentMethodId: string,
-  occurredAt: Date
+
+  occurredAt: Date,
 ) {
 
-  // 1. Load payment method
+  /*
+  PAYMENT METHOD
+  */
 
   const [paymentMethod] =
     await db
+
       .select()
-      .from(paymentMethods)
+
+      .from(
+        paymentMethods
+      )
+
       .where(
         eq(
           paymentMethods.id,
@@ -37,56 +43,123 @@ resolveFinancialMonth(
         )
       );
 
-  // 2. Resolve month date
+  if (!paymentMethod) {
 
-  const referenceMonth =
-    getFinancialMonthDate(
-      occurredAt,
-      paymentMethod?.closingDay
+    throw new Error(
+      'Payment method not found'
+    );
+  }
+
+  /*
+  BASE DATE
+  */
+
+  const baseDate =
+    new Date(
+      occurredAt
     );
 
-  const monthString =
-    referenceMonth
-      .toISOString()
-      .split('T')[0];
+  /*
+  CREDIT CARD RULE
+  */
 
-  // 3. Check existing month
+  if (
+    paymentMethod.closingDay
+  ) {
+
+    const purchaseDay =
+      baseDate.getDate();
+
+    /*
+    PURCHASE AFTER CLOSING
+    */
+
+    if (
+      purchaseDay >
+      paymentMethod.closingDay
+    ) {
+
+      baseDate.setMonth(
+        baseDate.getMonth()
+        + 1
+      );
+    }
+  }
+
+  /*
+  REFERENCE MONTH
+  */
+
+  const referenceMonth =
+    `${baseDate.getFullYear()}-${
+      String(
+        baseDate.getMonth() + 1
+      ).padStart(2, '0')
+    }`;
+
+  /*
+  FIND MONTH
+  */
 
   const [existingMonth] =
     await db
+
       .select()
-      .from(financialMonths)
+
+      .from(
+        financialMonths
+      )
+
       .where(
         and(
+
           eq(
             financialMonths.userId,
             userId
           ),
 
           eq(
-            financialMonths
-              .referenceMonth,
-
-            monthString
+            financialMonths.referenceMonth,
+            referenceMonth
           )
         )
       );
 
   if (existingMonth) {
+
     return existingMonth;
   }
 
-  // 4. Create month automatically
+  /*
+  CREATE MONTH
+  */
 
   const [createdMonth] =
     await db
-      .insert(financialMonths)
+
+      .insert(
+        financialMonths
+      )
+
       .values({
+
         userId,
 
-        referenceMonth:
-          monthString,
+        referenceMonth,
+
+        projectedIncome:
+          '0',
+
+        projectedExpense:
+          '0',
+
+        projectedBalance:
+          '0',
+
+        committedAmount:
+          '0',
       })
+
       .returning();
 
   return createdMonth;

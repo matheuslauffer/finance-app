@@ -67,9 +67,7 @@ PaymentMethodsPage() {
         </div>
 
         <Link
-          href="
-            /payment-methods/new
-          "
+          href="/payment-methods/new"
 
           className="
             bg-zinc-900
@@ -96,100 +94,150 @@ PaymentMethodsPage() {
       ">
 
         {
-  paymentMethods.map(
-    (method) => (
+          paymentMethods.map(
+            (method) => (
 
-      <div
-        key={method.id}
+              <div
+                key={method.id}
 
-        className="
-          flex
-          items-center
-          justify-between
-          px-6
-          py-5
-          border-b
-          border-zinc-100
-          last:border-b-0
-        "
-      >
+                className="
+                  flex
+                  items-center
+                  justify-between
+                  px-6
+                  py-5
+                  border-b
+                  border-zinc-100
+                  last:border-b-0
+                "
+              >
 
-        <div>
+                <div className="
+                  flex
+                  flex-col
+                  gap-1
+                ">
 
-          <p className="
-            font-semibold
-            text-zinc-900
-          ">
-            {method.name}
-          </p>
+                  <div className="
+                    flex
+                    items-center
+                    gap-3
+                  ">
 
-          <p className="
-            text-sm
-            text-zinc-500
-            mt-1
-          ">
-            {method.methodType}
-          </p>
+                    <p className="
+                      font-semibold
+                      text-zinc-900
+                    ">
+                      {method.name}
+                    </p>
 
-        </div>
+                    {
+                      method.supportsInstallments && (
 
-                    <form
-                        action={`
-                            /api/payment-methods/${method.id}/toggle
-                        `}
+                        <span className="
+                          text-xs
+                          font-medium
+                          px-2
+                          py-1
+                          rounded-full
+                          bg-emerald-100
+                          text-emerald-700
+                        ">
+                          Parcelado
+                        </span>
+                      )
+                    }
 
-                        method="POST"
-                        >
+                  </div>
 
-                        <button
-                            type="submit"
+                  <p className="
+                    text-sm
+                    text-zinc-500
+                  ">
+                    {method.methodType}
+                  </p>
 
-                            className={`
-                            relative
-                            w-14
-                            h-8
-                            rounded-full
-                            transition-all
-                            duration-300
+                  {
+                    method.supportsInstallments
+                    &&
+                    method.closingDay
+                    &&
+                    method.dueDay && (
 
-                            ${
-                                method.isActive
+                      <p className="
+                        text-sm
+                        text-zinc-400
+                      ">
+                        Fecha dia {
+                          method.closingDay
+                        }
+                        {' • '}
+                        Vence dia {
+                          method.dueDay
+                        }
+                      </p>
+                    )
+                  }
 
-                                ? `
-                                    bg-emerald-500
-                                `
+                </div>
 
-                                : `
-                                    bg-red-500
-                                `
-                            }
-                            `}
-                        >
+                <form
+                  action={
+                    `/api/payment-methods/${method.id}/toggle`
+                  }
 
-                            <span
-                            className={`
-                                absolute
-                                top-1
-                                w-6
-                                h-6
-                                rounded-full
-                                bg-white
-                                transition-all
-                                duration-300
+                  method="POST"
+                >
 
-                                ${
-                                method.isActive
+                  <button
+                    type="submit"
 
-                                    ? 'left-7'
+                    className={`
+                      relative
+                      w-14
+                      h-8
+                      rounded-full
+                      transition-all
+                      duration-300
 
-                                    : 'left-1'
-                                }
-                            `}
-                            />
+                      ${
+                        method.isActive
 
-                        </button>
+                          ? `
+                            bg-emerald-500
+                          `
 
-                        </form>
+                          : `
+                            bg-red-500
+                          `
+                      }
+                    `}
+                  >
+
+                    <span
+                      className={`
+                        absolute
+                        top-1
+                        w-6
+                        h-6
+                        rounded-full
+                        bg-white
+                        transition-all
+                        duration-300
+
+                        ${
+                          method.isActive
+
+                            ? 'left-7'
+
+                            : 'left-1'
+                        }
+                      `}
+                    />
+
+                  </button>
+
+                </form>
 
               </div>
             )

@@ -13,6 +13,10 @@ import {
 } from '@/db/schema/transactions';
 
 import {
+  recurringTransactions,
+} from '@/db/schema/recurring-transactions';
+
+import {
   desc,
 } from 'drizzle-orm';
 
@@ -63,6 +67,11 @@ export async function POST(
       }
     );
   }
+
+  const isRecurring =
+    formData.get(
+      'isRecurring'
+    ) === 'on';
 
   /*
   INSTALLMENTS
@@ -136,6 +145,88 @@ export async function POST(
 
     return Response.json(
       updated
+    );
+  }
+
+  /*
+  RECURRING
+  */
+
+  if (
+    isRecurring
+  ) {
+
+    const effectiveUntil =
+      formData.get(
+        'effectiveUntil'
+      );
+
+    await db
+
+      .insert(
+        recurringTransactions
+      )
+
+      .values({
+
+        userId,
+
+        description:
+          formData.get(
+            'description'
+          ) as string,
+
+        amount:
+          formData.get(
+            'amount'
+          ) as string,
+
+        transactionType:
+          formData.get(
+            'transactionType'
+          ) as
+            | 'INCOME'
+            | 'EXPENSE',
+
+        frequency:
+          formData.get(
+            'frequency'
+          ) as
+            | 'DAILY'
+            | 'WEEKLY'
+            | 'BIWEEKLY'
+            | 'MONTHLY'
+            | 'YEARLY',
+
+        categoryId:
+          formData.get(
+            'categoryId'
+          ) as string,
+
+        paymentMethodId:
+          formData.get(
+            'paymentMethodId'
+          ) as string,
+
+        effectiveFrom:
+          formData.get(
+            'effectiveDate'
+          ) as string,
+
+        effectiveUntil:
+          effectiveUntil
+            ? effectiveUntil as string
+            : null,
+
+        status:
+          'ACTIVE',
+      });
+
+    return Response.redirect(
+      new URL(
+        '/recurring-transactions',
+        request.url
+      )
     );
   }
 

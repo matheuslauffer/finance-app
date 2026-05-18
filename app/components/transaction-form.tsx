@@ -84,6 +84,11 @@ TransactionForm({
     setInstallmentMode,
   ] = useState('1');
 
+  const [
+    isRecurring,
+    setIsRecurring,
+  ] = useState(false);
+
   const selectedPaymentMethod =
     paymentMethods.find(
       (method) => {
@@ -463,6 +468,55 @@ TransactionForm({
       </div>
 
       {
+        !initialData && (
+
+          <div className="
+            border
+            border-zinc-200
+            rounded-2xl
+            p-4
+            bg-zinc-50
+          ">
+
+            <label className="
+              flex
+              items-center
+              gap-3
+              text-sm
+              font-medium
+              text-zinc-800
+            ">
+              <input
+                type="checkbox"
+
+                name="isRecurring"
+
+                checked={isRecurring}
+
+                onChange={(e) => {
+
+                  setIsRecurring(
+                    e.target.checked
+                  );
+                }}
+
+                className="
+                  h-4
+                  w-4
+                  accent-zinc-900
+                "
+              />
+
+              Recorrente
+            </label>
+
+          </div>
+        )
+      }
+
+      {
+        !isRecurring
+        &&
         selectedPaymentMethod
           ?.supportsInstallments && (
 
@@ -602,6 +656,114 @@ TransactionForm({
         )
       }
 
+      {
+        isRecurring && (
+
+          <div className="
+            grid
+            grid-cols-1
+            md:grid-cols-2
+            gap-6
+          ">
+
+            <div className="
+              flex
+              flex-col
+              gap-2
+            ">
+
+              <label className="
+                text-sm
+                font-medium
+                text-zinc-700
+              ">
+                Frequência
+              </label>
+
+              <select
+                name="frequency"
+
+                required={isRecurring}
+
+                defaultValue="MONTHLY"
+
+                className="
+                  border
+                  border-zinc-300
+                  rounded-2xl
+                  px-4
+                  py-3
+                  bg-white
+                  text-zinc-900
+                  placeholder:text-zinc-400
+                  appearance-none
+                  opacity-100
+                "
+              >
+
+                <option value="DAILY">
+                  Diário
+                </option>
+
+                <option value="WEEKLY">
+                  Semanal
+                </option>
+
+                <option value="BIWEEKLY">
+                  Quinzenal
+                </option>
+
+                <option value="MONTHLY">
+                  Mensal
+                </option>
+
+                <option value="YEARLY">
+                  Anual
+                </option>
+
+              </select>
+
+            </div>
+
+            <div className="
+              flex
+              flex-col
+              gap-2
+            ">
+
+              <label className="
+                text-sm
+                font-medium
+                text-zinc-700
+              ">
+                Fim
+              </label>
+
+              <input
+                type="date"
+
+                name="effectiveUntil"
+
+                className="
+                  border
+                  border-zinc-300
+                  rounded-2xl
+                  px-4
+                  py-3
+                  bg-white
+                  text-zinc-900
+                  placeholder:text-zinc-400
+                  appearance-none
+                  opacity-100
+                "
+              />
+
+            </div>
+
+          </div>
+        )
+      }
+
       <div className="
         grid
         grid-cols-1
@@ -692,7 +854,11 @@ TransactionForm({
             font-medium
             text-zinc-700
           ">
-            Data
+            {
+              isRecurring
+                ? 'Início'
+                : 'Data'
+            }
           </label>
 
           <input
@@ -731,7 +897,11 @@ TransactionForm({
 
             ? 'Salvar alterações'
 
-            : 'Criar transação'
+            : isRecurring
+
+              ? 'Criar recorrência'
+
+              : 'Criar transação'
         }
       />
 

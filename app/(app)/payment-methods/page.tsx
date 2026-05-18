@@ -10,7 +10,7 @@ import {
 
 import {
   getPaymentMethods,
-} from '@/services/payment-method-service';
+} from '../../../services/payment-method-service';
 
 export default async function
 PaymentMethodsPage() {
@@ -124,7 +124,7 @@ PaymentMethodsPage() {
                   text-zinc-500
                   mt-2
                 ">
-                  {method.type}
+                  {method.methodType}
                 </p>
 
               </div>

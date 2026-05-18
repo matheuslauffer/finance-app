@@ -10,6 +10,11 @@ export const transactionTypeEnum = pgEnum(
   ]
 );
 
+export type TransactionType =
+
+  typeof transactionTypeEnum
+    .enumValues[number];
+
 export const transactionStatusEnum = pgEnum(
   'transaction_status',
   [
@@ -18,6 +23,11 @@ export const transactionStatusEnum = pgEnum(
     'CANCELLED',
   ]
 );
+
+export type TransactionStatus =
+
+  typeof transactionStatusEnum
+    .enumValues[number];
 
 export const accountTypeEnum = pgEnum(
   'account_type',
@@ -30,17 +40,27 @@ export const accountTypeEnum = pgEnum(
   ]
 );
 
+export type AccountType =
+
+  typeof accountTypeEnum
+    .enumValues[number];
+
 export const paymentMethodTypeEnum = pgEnum(
   'payment_method_type',
   [
     'PIX',
     'DEBIT',
-    'CREDIT',
+    'CREDIT_CARD',
     'BOLETO',
     'BANK_TRANSFER',
     'CREDIT_LINE',
   ]
 );
+
+export type PaymentMethodType =
+
+  typeof paymentMethodTypeEnum
+    .enumValues[number];
 
 export const operationTypeEnum = pgEnum(
   'operation_type',
@@ -54,6 +74,11 @@ export const operationTypeEnum = pgEnum(
   ]
 );
 
+export type OperationType =
+
+  typeof operationTypeEnum
+    .enumValues[number];
+
 export const installmentStatusEnum =
   pgEnum(
     'installment_status',
@@ -65,7 +90,12 @@ export const installmentStatusEnum =
     ]
   );
 
-  export const recurrenceFrequencyEnum =
+export type InstallmentStatus =
+
+  typeof installmentStatusEnum
+    .enumValues[number];
+
+export const recurrenceFrequencyEnum =
   pgEnum(
     'recurrence_frequency',
     [
@@ -75,3 +105,8 @@ export const installmentStatusEnum =
       'YEARLY',
     ]
   );
+
+export type RecurrenceFrequency =
+
+  typeof recurrenceFrequencyEnum
+    .enumValues[number];

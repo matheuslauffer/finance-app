@@ -1,15 +1,76 @@
+import {
+  auth,
+} from '@clerk/nextjs/server';
+
+import {
+  NextResponse,
+} from 'next/server';
+
 import { db } from '@/db';
 
 import {
   paymentMethods,
 } from '@/db/schema/payment-methods';
 
-export async function GET() {
+import type {
+  PaymentMethodType,
+} from '../../../db/schema/enums';
 
-  const result =
-    await db
-      .select()
-      .from(paymentMethods);
+export async function
+POST(
+  request: Request
+) {
 
-  return Response.json(result);
+  const session =
+    await auth();
+
+  const userId =
+    session.userId;
+
+  if (!userId) {
+
+    return NextResponse.json(
+
+      {
+        error:
+          'Unauthorized',
+      },
+
+      {
+        status: 401,
+      }
+    );
+  }
+
+  const formData =
+    await request.formData();
+
+  await db
+
+  .insert(
+    paymentMethods
+  )
+
+  .values({
+
+    userId,
+
+    name:
+      formData.get(
+        'name'
+      ) as string,
+
+    methodType:
+      formData.get(
+        'type'
+      ) as PaymentMethodType
+  });
+
+  return NextResponse.redirect(
+
+    new URL(
+      '/payment-methods',
+      request.url
+    )
+  );
 }

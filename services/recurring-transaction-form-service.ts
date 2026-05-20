@@ -9,6 +9,8 @@ import {
 } from '@/db/schema/payment-methods';
 
 import {
+  and,
+  asc,
   eq,
 } from 'drizzle-orm';
 
@@ -27,9 +29,22 @@ getRecurringTransactionFormData(
       .select()
       .from(categories)
       .where(
-        eq(
-          categories.userId,
-          userId
+        and(
+
+          eq(
+            categories.userId,
+            userId
+          ),
+
+          eq(
+            categories.isActive,
+            true
+          )
+        )
+      )
+      .orderBy(
+        asc(
+          categories.name
         )
       ),
 

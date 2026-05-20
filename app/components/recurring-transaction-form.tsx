@@ -14,6 +14,9 @@ type Props = {
     id: string;
 
     name: string;
+
+    parentCategoryId:
+      string | null;
   }[];
 
   paymentMethods: {
@@ -102,6 +105,38 @@ RecurringTransactionForm({
 
     ?? 'EXPENSE'
   );
+
+  function
+  getCategoryLabel(
+    category: {
+      id: string;
+
+      name: string;
+
+      parentCategoryId:
+        string | null;
+    }
+  ) {
+
+    if (
+      !category.parentCategoryId
+    ) {
+
+      return category.name;
+    }
+
+    const parent =
+      categories.find(
+        (item) => (
+          item.id
+          === category.parentCategoryId
+        )
+      );
+
+    return parent
+      ? `${parent.name} / ${category.name}`
+      : category.name;
+  }
 
   function
   formatCurrency(
@@ -493,7 +528,11 @@ RecurringTransactionForm({
 
                     value={category.id}
                   >
-                    {category.name}
+                    {
+                      getCategoryLabel(
+                        category
+                      )
+                    }
                   </option>
                 )
               )

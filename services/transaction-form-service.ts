@@ -11,6 +11,7 @@ import {
 import {
   eq,
   and,
+  asc,
 } from 'drizzle-orm';
 
 export async function
@@ -28,9 +29,22 @@ getTransactionFormData(
       .select()
       .from(categories)
       .where(
-        eq(
-          categories.userId,
-          userId
+        and(
+
+          eq(
+            categories.userId,
+            userId
+          ),
+
+          eq(
+            categories.isActive,
+            true
+          )
+        )
+      )
+      .orderBy(
+        asc(
+          categories.name
         )
       ),
 

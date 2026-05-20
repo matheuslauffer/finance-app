@@ -14,6 +14,9 @@ type Props = {
     id: string;
 
     name: string;
+
+    parentCategoryId:
+      string | null;
   }[];
 
   paymentMethods: {
@@ -128,6 +131,38 @@ TransactionForm({
 
       : ''
   );
+
+  function
+  getCategoryLabel(
+    category: {
+      id: string;
+
+      name: string;
+
+      parentCategoryId:
+        string | null;
+    }
+  ) {
+
+    if (
+      !category.parentCategoryId
+    ) {
+
+      return category.name;
+    }
+
+    const parent =
+      categories.find(
+        (item) => (
+          item.id
+          === category.parentCategoryId
+        )
+      );
+
+    return parent
+      ? `${parent.name} / ${category.name}`
+      : category.name;
+  }
 
   function
   formatCurrency(
@@ -384,7 +419,11 @@ TransactionForm({
 
                     value={category.id}
                   >
-                    {category.name}
+                    {
+                      getCategoryLabel(
+                        category
+                      )
+                    }
                   </option>
                 )
               )

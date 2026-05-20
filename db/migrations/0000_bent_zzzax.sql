@@ -22,6 +22,7 @@ CREATE TABLE "categories" (
 	"name" text NOT NULL,
 	"is_fixed_expense" boolean DEFAULT false NOT NULL,
 	"include_in_forecast" boolean DEFAULT true NOT NULL,
+	"is_active" boolean DEFAULT true NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -87,7 +88,8 @@ CREATE TABLE "payment_methods" (
 	"closing_day" integer,
 	"due_day" integer,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"is_active" boolean DEFAULT true NOT NULL
+	"is_active" boolean DEFAULT true NOT NULL,
+	"supports_installments" boolean DEFAULT false NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "recurrences" (

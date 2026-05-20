@@ -271,7 +271,7 @@ TransactionsPage({
                     {
                       Number(
                         transaction.amount
-                      ).toFixed(2)
+                      )formatCurrency(value)
                     }
                   </p>
 

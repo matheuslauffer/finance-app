@@ -1,3 +1,7 @@
+import {
+  formatCurrency,
+} from '@/lib/currency';
+
 type Props = {
   data: {
     category: string | null;
@@ -11,11 +15,21 @@ ExpensesByCategory({
   data,
 }: Props) {
 
+  const sortedData =
+    [...data]
+
+      .sort(
+        (a, b) =>
+          b.total - a.total
+      );
+
   const max =
     Math.max(
-      ...data.map(
+
+      ...sortedData.map(
         (item) => item.total
       ),
+
       1
     );
 
@@ -28,6 +42,9 @@ ExpensesByCategory({
       border-zinc-200
       p-6
       shadow-sm
+      hover:shadow-md
+      transition-all
+      duration-300
     ">
 
       <div className="
@@ -56,12 +73,13 @@ ExpensesByCategory({
       ">
 
         {
-          data.map((item) => {
+          sortedData.map((item) => {
 
             const percentage =
               (
                 item.total
-                / max
+                /
+                max
               ) * 100;
 
             return (
@@ -69,7 +87,16 @@ ExpensesByCategory({
               <div
                 key={
                   item.category
+                  ?? 'uncategorized'
                 }
+
+                className="
+                  hover:bg-zinc-50
+                  rounded-2xl
+                  px-3
+                  py-3
+                  transition
+                "
               >
 
                 <div className="
@@ -94,10 +121,10 @@ ExpensesByCategory({
                     font-semibold
                     text-zinc-900
                   ">
-                    R$
                     {
-                      item.total
-                        .toFixed(2)
+                      formatCurrency(
+                        item.total
+                      )
                     }
                   </p>
 

@@ -1,1 +1,0 @@
-ALTER TABLE "payment_methods" ADD COLUMN "supports_installments" boolean DEFAULT false NOT NULL;

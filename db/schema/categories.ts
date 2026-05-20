@@ -38,6 +38,12 @@ export const categories = pgTable(
       .default(true)
       .notNull(),
 
+    isActive: boolean(
+      'is_active'
+    )
+      .default(true)
+      .notNull(),
+
     createdAt: timestamp('created_at')
       .defaultNow()
       .notNull(),

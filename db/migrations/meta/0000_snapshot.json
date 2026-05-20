@@ -1,5 +1,5 @@
 {
-  "id": "98ba181a-90d7-43cd-944e-960cfdb1211a",
+  "id": "5d463f2a-4c4f-4804-bf2f-d7f18d944fb6",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -115,6 +115,13 @@
         },
         "include_in_forecast": {
           "name": "include_in_forecast",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "is_active": {
+          "name": "is_active",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
@@ -615,6 +622,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "supports_installments": {
+          "name": "supports_installments",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         }
       },
       "indexes": {},

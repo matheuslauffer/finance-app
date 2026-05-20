@@ -5,16 +5,6 @@ import {
 } from '@/db/schema/financial-months';
 
 import {
-  getCurrentFinancialMonth,
-} from './current-financial-month-service';
-
-import {
-  eq,
-  and,
-  desc,
-} from 'drizzle-orm';
-
-import {
   transactions,
 } from '@/db/schema/transactions';
 
@@ -23,12 +13,23 @@ import {
 } from '@/db/schema/categories';
 
 import {
-  sql,
-} from 'drizzle-orm';
+  paymentMethods,
+} from '@/db/schema/payment-methods';
+
+import {
+  getCurrentFinancialMonth,
+} from './current-financial-month-service';
 
 import {
   getProjectedTransactions,
 } from './recurring-projection-service';
+
+import {
+  eq,
+  and,
+  desc,
+  sql,
+} from 'drizzle-orm';
 
 type DashboardData = {
 
@@ -38,35 +39,92 @@ type DashboardData = {
       string;
   };
 
-  projectedIncome: number;
+  projectedIncome:
+    number;
 
-  projectedExpense: number;
+  projectedExpense:
+    number;
 
-  projectedBalance: number;
+  projectedBalance:
+    number;
 
-  committedAmount: number;
+  committedAmount:
+    number;
 
-  commitmentPercentage: number;
+  commitmentPercentage:
+    number;
+
+  monthlyBalance:
+    number;
 
   recentMonths: {
-    referenceMonth: string;
 
-    projectedBalance: number;
+    referenceMonth:
+      string;
+
+    projectedBalance:
+      number;
+
   }[];
 
   expensesByCategory: {
-    category: string | null;
 
-    total: number;
+    category:
+      string | null;
+
+    total:
+      number;
+
   }[];
 
   monthlyCashFlow: {
 
-    referenceMonth: string;
+    referenceMonth:
+      string;
 
-    realized: number;
+    realized:
+      number;
 
-    projected: number;
+    projected:
+      number;
+
+  }[];
+
+  weeklyExpenses: {
+
+    id:
+      string;
+
+    description:
+      string;
+
+    amount:
+      number;
+
+    effectiveDate:
+      string;
+
+    paymentMethodName:
+      string | null;
+
+  }[];
+
+  recentTransactions: {
+
+    id:
+      string;
+
+    description:
+      string;
+
+    amount:
+      number;
+
+    transactionType:
+      string;
+
+    createdAt:
+      Date;
 
   }[];
 };
@@ -88,21 +146,24 @@ getCurrentDashboard(
 
   const [currentFinancialMonth] =
     await db
+
       .select()
-      .from(financialMonths)
+
+      .from(
+        financialMonths
+      )
+
       .where(
         and(
+
           eq(
             financialMonths.userId,
             userId
           ),
 
           eq(
-            financialMonths
-              .referenceMonth,
-
-            currentMonth
-              .referenceMonth
+            financialMonths.referenceMonth,
+            currentMonth.referenceMonth
           )
         )
       );
@@ -113,20 +174,26 @@ getCurrentDashboard(
 
   const months =
     await db
+
       .select()
-      .from(financialMonths)
+
+      .from(
+        financialMonths
+      )
+
       .where(
         eq(
           financialMonths.userId,
           userId
         )
       )
+
       .orderBy(
         desc(
-          financialMonths
-            .referenceMonth
+          financialMonths.referenceMonth
         )
       )
+
       .limit(6);
 
   /*
@@ -167,11 +234,13 @@ getCurrentDashboard(
 
   const commitmentPercentage =
     projectedIncome > 0
+
       ? (
           projectedExpense
           /
           projectedIncome
         ) * 100
+
       : 0;
 
   /*
@@ -180,19 +249,22 @@ getCurrentDashboard(
 
   const recentMonths =
     months
+
       .reverse()
-      .map((month) => ({
 
-        referenceMonth:
-          month.referenceMonth,
+      .map(
+        (month) => ({
 
-        projectedBalance:
-          Number(
-            month
-              .projectedBalance
-            ?? 0
-          ),
-      }));
+          referenceMonth:
+            month.referenceMonth,
+
+          projectedBalance:
+            Number(
+              month.projectedBalance
+              ?? 0
+            ),
+        })
+      );
 
   /*
   EXPENSES BY CATEGORY
@@ -214,9 +286,12 @@ getCurrentDashboard(
           `,
       })
 
-      .from(transactions)
+      .from(
+        transactions
+      )
 
       .leftJoin(
+
         categories,
 
         eq(
@@ -226,6 +301,7 @@ getCurrentDashboard(
       )
 
       .leftJoin(
+
         financialMonths,
 
         eq(
@@ -313,6 +389,128 @@ getCurrentDashboard(
       )
     );
 
+  /*
+  WEEKLY EXPENSES
+  */
+
+  const today =
+    new Date();
+
+  const nextWeek =
+    new Date();
+
+  nextWeek.setDate(
+    today.getDate() + 7
+  );
+
+  const weeklyExpenses =
+    await db
+
+      .select({
+
+        id:
+          transactions.id,
+
+        description:
+          transactions.description,
+
+        amount:
+          transactions.amount,
+
+        effectiveDate:
+          transactions.effectiveDate,
+
+        paymentMethodName:
+          paymentMethods.name,
+      })
+
+      .from(
+        transactions
+      )
+
+      .leftJoin(
+
+        paymentMethods,
+
+        eq(
+          paymentMethods.id,
+          transactions.paymentMethodId
+        )
+      )
+
+      .where(
+        and(
+
+          eq(
+            transactions.userId,
+            userId
+          ),
+
+          eq(
+            transactions.transactionType,
+            'EXPENSE'
+          ),
+
+          sql`
+            ${transactions.effectiveDate}
+            BETWEEN
+            ${today.toISOString().split('T')[0]}
+            AND
+            ${nextWeek.toISOString().split('T')[0]}
+          `
+        )
+      )
+
+      .orderBy(
+        transactions.effectiveDate
+      )
+
+      .limit(10);
+
+  /*
+  RECENT TRANSACTIONS
+  */
+
+  const recentTransactions =
+    await db
+
+      .select({
+
+        id:
+          transactions.id,
+
+        description:
+          transactions.description,
+
+        amount:
+          transactions.amount,
+
+        transactionType:
+          transactions.transactionType,
+
+        createdAt:
+          transactions.createdAt,
+      })
+
+      .from(
+        transactions
+      )
+
+      .where(
+        eq(
+          transactions.userId,
+          userId
+        )
+      )
+
+      .orderBy(
+        desc(
+          transactions.createdAt
+        )
+      )
+
+      .limit(5);
+
   return {
 
     currentMonth,
@@ -326,6 +524,9 @@ getCurrentDashboard(
     committedAmount,
 
     commitmentPercentage,
+
+    monthlyBalance:
+      projectedBalance,
 
     recentMonths,
 
@@ -341,6 +542,32 @@ getCurrentDashboard(
           total:
             Number(
               item.total
+            ),
+        })
+      ),
+
+    weeklyExpenses:
+      weeklyExpenses.map(
+        (item) => ({
+
+          ...item,
+
+          amount:
+            Number(
+              item.amount
+            ),
+        })
+      ),
+
+    recentTransactions:
+      recentTransactions.map(
+        (item) => ({
+
+          ...item,
+
+          amount:
+            Number(
+              item.amount
             ),
         })
       ),

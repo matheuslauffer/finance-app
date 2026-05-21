@@ -112,6 +112,15 @@ generateRecurringTransactions(
     );
   }
 
+  if (
+      !recurrence.isActive
+      ||
+      recurrence.endedAt
+    ) {
+
+      return;
+    }
+
   /*
   GENERATE 12 MONTHS
   */
@@ -272,4 +281,22 @@ generateRecurringTransactions(
         recurrence.frequency
       );
   }
+  await db
+
+  .update(recurrences)
+
+  .set({
+
+    nextOccurrence:
+      currentDate
+        .toISOString()
+        .split('T')[0],
+  })
+
+  .where(
+    eq(
+      recurrences.id,
+      recurrence.id
+    )
+  );
 }

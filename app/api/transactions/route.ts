@@ -13,10 +13,6 @@ import {
 } from '@/db/schema/transactions';
 
 import {
-  recurringTransactions,
-} from '@/db/schema/recurring-transactions';
-
-import {
   desc,
 } from 'drizzle-orm';
 
@@ -171,72 +167,6 @@ export async function POST(
   if (
     isRecurring
   ) {
-
-    const effectiveUntil =
-      formData.get(
-        'effectiveUntil'
-      );
-
-    await db
-
-      .insert(
-        recurringTransactions
-      )
-
-      .values({
-
-        userId,
-
-        description:
-          formData.get(
-            'description'
-          ) as string,
-
-        amount:
-          formData.get(
-            'amount'
-          ) as string,
-
-        transactionType:
-          formData.get(
-            'transactionType'
-          ) as
-            | 'INCOME'
-            | 'EXPENSE',
-
-        frequency:
-          formData.get(
-            'frequency'
-          ) as
-            | 'DAILY'
-            | 'WEEKLY'
-            | 'BIWEEKLY'
-            | 'MONTHLY'
-            | 'YEARLY',
-
-        categoryId:
-          formData.get(
-            'categoryId'
-          ) as string,
-
-        paymentMethodId:
-          formData.get(
-            'paymentMethodId'
-          ) as string,
-
-        effectiveFrom:
-          effectiveDate,
-
-        effectiveUntil:
-          effectiveUntil
-            ? effectiveUntil as string
-            : null,
-
-        dueDate,
-
-        status:
-          'ACTIVE',
-      });
 
     return Response.redirect(
       new URL(

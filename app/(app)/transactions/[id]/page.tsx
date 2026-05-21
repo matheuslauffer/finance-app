@@ -149,7 +149,7 @@ TransactionDetailsPage({
               R$ {
                 Number(
                   transaction.amount
-                )formatCurrency(value)
+                ).toFixed(2)
               }
             </p>
 
@@ -274,7 +274,7 @@ TransactionDetailsPage({
                     details
                       .installmentPlan
                       .installmentAmount
-                  )formatCurrency(value)
+                  ).toFixed(2)
                 }
               </p>
 
@@ -345,7 +345,7 @@ TransactionDetailsPage({
 
                             Number(
                               installment.amount
-                            )formatCurrency(value)
+                            ).toFixed(2)
                           }
                         </p>
 

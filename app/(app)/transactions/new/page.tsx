@@ -89,30 +89,38 @@ NewTransactionPage() {
       ),
 
       ...recurringTransactions.map(
-        (recurring) => ({
+          (recurring) => ({
 
-          id:
-            recurring.id,
+            id:
+              recurring.id,
 
-          kind:
-            'RECURRING' as const,
+            kind:
+              'RECURRING' as const,
 
-          description:
-            recurring.description,
+            description:
+              recurring.description,
 
-          amount:
-            recurring.amount,
+            amount:
+              recurring.amount,
 
-          transactionType:
-            recurring.transactionType,
+            transactionType:
+              'EXPENSE' as const,
 
-          status:
-            recurring.status,
+            status:
+              recurring.endedAt
 
-          createdAt:
-            recurring.createdAt,
-        })
-      ),
+                ? 'ENDED'
+
+                : recurring.isActive
+
+                  ? 'ACTIVE'
+
+                  : 'PAUSED',
+
+            createdAt:
+              recurring.nextOccurrence,
+          })
+        ),
     ]
       .sort(
         (first, second) => (

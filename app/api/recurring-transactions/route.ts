@@ -18,7 +18,7 @@ import {
 
 import {
   generateRecurringTransactions,
-} from '@/services/generate-recurring-transactions';
+} from '@/services/generate-recurring-transactions-service';
 
 export async function
 POST(

@@ -5,613 +5,271 @@ import {
 } from '@/db/schema/recurring-transactions';
 
 import {
-  transactions,
-} from '@/db/schema/transactions';
+  recurrences,
+} from '@/db/schema/recurrences';
+
+import {
+  financialMonths,
+} from '@/db/schema/financial-months';
 
 import {
   and,
   eq,
-  gte,
-  isNull,
-  lte,
-  or,
 } from 'drizzle-orm';
 
 import {
-  resolveFinancialMonth,
-} from './financial-month-service';
-
-import {
-  recalculateFinancialMonth,
-} from './recalculate-financial-month';
-
-type Frequency =
-  | 'DAILY'
-  | 'WEEKLY'
-  | 'BIWEEKLY'
-  | 'MONTHLY'
-  | 'YEARLY';
-
-type GeneratedRecurringTransactionsResult = {
-
-  month: string;
-
-  createdCount: number;
-
-  skippedCount: number;
-};
+  getReferenceMonth,
+} from '@/lib/reference-month';
 
 function
-parseDate(
-  value: string
-) {
-
-  return new Date(
-    `${value}T00:00:00`
-  );
-}
-
-function
-formatDate(
-  date: Date
-) {
-
-  const year =
-    date.getFullYear();
-
-  const month =
-    String(
-      date.getMonth() + 1
-    ).padStart(2, '0');
-
-  const day =
-    String(
-      date.getDate()
-    ).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-}
-
-function
-addDays(
+addFrequency(
   date: Date,
 
-  days: number
+  frequency:
+    | 'DAILY'
+    | 'WEEKLY'
+    | 'BIWEEKLY'
+    | 'MONTHLY'
+    | 'YEARLY'
 ) {
 
-  const result =
-    new Date(
-      date
-    );
+  const next =
+    new Date(date);
 
-  result.setDate(
-    result.getDate()
-    + days
-  );
+  switch (frequency) {
 
-  return result;
-}
+    case 'DAILY':
 
-function
-getDaysBetween(
-  start: Date,
-
-  end: Date
-) {
-
-  return Math.floor(
-    (
-      end.getTime()
-      - start.getTime()
-    )
-    / 86400000
-  );
-}
-
-function
-getLastDayOfMonth(
-  year: number,
-
-  monthIndex: number
-) {
-
-  return new Date(
-    year,
-    monthIndex + 1,
-    0
-  ).getDate();
-}
-
-function
-createDateWithClampedDay(
-  year: number,
-
-  monthIndex: number,
-
-  day: number
-) {
-
-  return new Date(
-    year,
-    monthIndex,
-    Math.min(
-      day,
-      getLastDayOfMonth(
-        year,
-        monthIndex
-      )
-    )
-  );
-}
-
-function
-isInsideWindow(
-  date: Date,
-
-  windowStart: Date,
-
-  windowEnd: Date
-) {
-
-  return (
-    date >= windowStart
-    && date <= windowEnd
-  );
-}
-
-function
-getOccurrenceDates(
-  frequency: Frequency,
-
-  effectiveFrom: string,
-
-  effectiveUntil: string | null,
-
-  monthStart: string,
-
-  monthEnd: string
-) {
-
-  const startDate =
-    parseDate(
-      effectiveFrom > monthStart
-        ? effectiveFrom
-        : monthStart
-    );
-
-  const endDate =
-    parseDate(
-      effectiveUntil
-      && effectiveUntil < monthEnd
-        ? effectiveUntil
-        : monthEnd
-    );
-
-  if (
-    startDate > endDate
-  ) {
-
-    return [];
-  }
-
-  const anchorDate =
-    parseDate(
-      effectiveFrom
-    );
-
-  if (
-    frequency === 'DAILY'
-  ) {
-
-    const dates: string[] =
-      [];
-
-    for (
-      let current = startDate;
-      current <= endDate;
-      current = addDays(
-        current,
-        1
-      )
-    ) {
-
-      dates.push(
-        formatDate(
-          current
-        )
-      );
-    }
-
-    return dates;
-  }
-
-  if (
-    frequency === 'WEEKLY'
-    || frequency === 'BIWEEKLY'
-  ) {
-
-    const intervalDays =
-      frequency === 'WEEKLY'
-        ? 7
-        : 14;
-
-    const daysUntilWindow =
-      getDaysBetween(
-        anchorDate,
-        startDate
+      next.setDate(
+        next.getDate() + 1
       );
 
-    const intervalsToSkip =
-      Math.max(
-        0,
-        Math.ceil(
-          daysUntilWindow
-          / intervalDays
-        )
+      break;
+
+    case 'WEEKLY':
+
+      next.setDate(
+        next.getDate() + 7
       );
 
-    const dates: string[] =
-      [];
+      break;
 
-    for (
-      let current =
-        addDays(
-          anchorDate,
-          intervalsToSkip
-          * intervalDays
-        );
-      current <= endDate;
-      current = addDays(
-        current,
-        intervalDays
-      )
-    ) {
+    case 'BIWEEKLY':
 
-      if (
-        current >= startDate
-      ) {
-
-        dates.push(
-          formatDate(
-            current
-          )
-        );
-      }
-    }
-
-    return dates;
-  }
-
-  const [
-    year,
-    monthNumber,
-  ] =
-    monthStart
-      .slice(0, 7)
-      .split('-')
-      .map(Number);
-
-  if (
-    frequency === 'MONTHLY'
-  ) {
-
-    const occurrenceDate =
-      createDateWithClampedDay(
-        year,
-        monthNumber - 1,
-        anchorDate.getDate()
+      next.setDate(
+        next.getDate() + 14
       );
 
-    return isInsideWindow(
-      occurrenceDate,
-      startDate,
-      endDate
-    )
-      ? [
-          formatDate(
-            occurrenceDate
-          ),
-        ]
-      : [];
-  }
+      break;
 
-  if (
-    frequency === 'YEARLY'
-  ) {
+    case 'MONTHLY':
 
-    if (
-      anchorDate.getMonth()
-      !== monthNumber - 1
-    ) {
-
-      return [];
-    }
-
-    const occurrenceDate =
-      createDateWithClampedDay(
-        year,
-        monthNumber - 1,
-        anchorDate.getDate()
+      next.setMonth(
+        next.getMonth() + 1
       );
 
-    return isInsideWindow(
-      occurrenceDate,
-      startDate,
-      endDate
-    )
-      ? [
-          formatDate(
-            occurrenceDate
-          ),
-        ]
-      : [];
+      break;
+
+    case 'YEARLY':
+
+      next.setFullYear(
+        next.getFullYear() + 1
+      );
+
+      break;
   }
 
-  return [];
+  return next;
 }
 
 export async function
 generateRecurringTransactions(
-  userId: string,
+  recurrenceId: string
+) {
 
-  month: string
-): Promise<GeneratedRecurringTransactionsResult>
-{
+  /*
+  RECURRENCE
+  */
 
-  const [
-    year,
-    monthNumber,
-  ] =
-    month
-      .split('-')
-      .map(Number);
-
-  const lastDay =
-    getLastDayOfMonth(
-      year,
-      monthNumber - 1
-    );
-
-  const monthStart =
-    `${month}-01`;
-
-  const monthEnd =
-    `${month}-${String(
-      lastDay
-    ).padStart(2, '0')}`;
-
-  const activeRecurringTransactions =
+  const [recurrence] =
     await db
 
       .select()
 
-      .from(
-        recurringTransactions
-      )
+      .from(recurrences)
 
       .where(
-        and(
-
-          eq(
-            recurringTransactions.userId,
-            userId
-          ),
-
-          eq(
-            recurringTransactions.status,
-            'ACTIVE'
-          ),
-
-          lte(
-            recurringTransactions
-              .effectiveFrom,
-
-            monthEnd
-          ),
-
-          or(
-
-            isNull(
-              recurringTransactions
-                .effectiveUntil
-            ),
-
-            gte(
-              recurringTransactions
-                .effectiveUntil,
-
-              monthStart
-            )
-          )
+        eq(
+          recurrences.id,
+          recurrenceId
         )
       );
 
-  const existingTransactions =
-    await db
+  if (!recurrence) {
 
-      .select({
+    throw new Error(
+      'Recurrence not found'
+    );
+  }
 
-        recurringTransactionId:
-          transactions
-            .recurringTransactionId,
+  /*
+  GENERATE 12 MONTHS
+  */
 
-        effectiveDate:
-          transactions
-            .effectiveDate,
-      })
-
-      .from(
-        transactions
-      )
-
-      .where(
-        and(
-
-          eq(
-            transactions.userId,
-            userId
-          ),
-
-          gte(
-            transactions.effectiveDate,
-            monthStart
-          ),
-
-          lte(
-            transactions.effectiveDate,
-            monthEnd
-          )
-        )
-      );
-
-  const existingGeneratedKeys =
-    new Set(
-      existingTransactions
-        .filter(
-          (transaction) => (
-            Boolean(
-              transaction
-                .recurringTransactionId
-            )
-          )
-        )
-        .map(
-          (transaction) => (
-            `${transaction.recurringTransactionId}:${transaction.effectiveDate}`
-          )
-        )
+  let currentDate =
+    new Date(
+      recurrence.nextOccurrence
     );
 
-  const affectedFinancialMonthIds =
-    new Set<string>();
-
-  let createdCount =
-    0;
-
-  let skippedCount =
-    0;
-
   for (
-    const recurring
-    of activeRecurringTransactions
+    let index = 0;
+    index < 12;
+    index++
   ) {
 
-    const occurrenceDates =
-      getOccurrenceDates(
+    /*
+    REFERENCE MONTH
+    */
 
-        recurring.frequency,
-
-        recurring.effectiveFrom,
-
-        recurring.effectiveUntil,
-
-        monthStart,
-
-        monthEnd
+    const referenceMonth =
+      getReferenceMonth(
+        currentDate
       );
 
-    for (
-      const occurrenceDate
-      of occurrenceDates
-    ) {
+    /*
+    FINANCIAL MONTH
+    */
 
-      const existingKey =
-        `${recurring.id}:${occurrenceDate}`;
+    let [financialMonth] =
+      await db
 
-      if (
-        existingGeneratedKeys.has(
-          existingKey
+        .select()
+
+        .from(financialMonths)
+
+        .where(
+          and(
+
+            eq(
+              financialMonths.userId,
+              recurrence.userId
+            ),
+
+            eq(
+              financialMonths.referenceMonth,
+              referenceMonth
+            )
+          )
+        );
+
+    if (!financialMonth) {
+
+      const [createdMonth] =
+        await db
+
+          .insert(
+            financialMonths
+          )
+
+          .values({
+
+            userId:
+              recurrence.userId,
+
+            referenceMonth,
+
+            projectedIncome:
+              '0',
+
+            projectedExpense:
+              '0',
+
+            projectedBalance:
+              '0',
+
+            committedAmount:
+              '0',
+          })
+
+          .returning();
+
+      financialMonth =
+        createdMonth;
+    }
+
+    /*
+    EXISTING SNAPSHOT
+    */
+
+    const [existing] =
+      await db
+
+        .select()
+
+        .from(
+          recurringTransactions
         )
-      ) {
 
-        skippedCount += 1;
+        .where(
+          and(
 
-        continue;
-      }
+            eq(
+              recurringTransactions
+                .recurrenceId,
 
-      const occurredAt =
-        parseDate(
-          occurrenceDate
+              recurrence.id
+            ),
+
+            eq(
+              recurringTransactions
+                .financialMonthId,
+
+              financialMonth.id
+            )
+          )
         );
 
-      const financialMonth =
-        await resolveFinancialMonth(
+    /*
+    SKIP DUPLICATE
+    */
 
-          userId,
-
-          recurring.paymentMethodId,
-
-          occurredAt
-        );
+    if (!existing) {
 
       await db
 
         .insert(
-          transactions
+          recurringTransactions
         )
 
         .values({
 
-          userId,
-
-          paymentMethodId:
-            recurring.paymentMethodId,
-
-          categoryId:
-            recurring.categoryId,
+          recurrenceId:
+            recurrence.id,
 
           financialMonthId:
             financialMonth.id,
 
-          description:
-            recurring.description,
+          projectedAmount:
+            recurrence.amount,
 
-          amount:
-            recurring.amount,
-
-          transactionType:
-            recurring.transactionType,
+          dueDate:
+            currentDate
+              .toISOString()
+              .split('T')[0],
 
           status:
             'PROJECTED',
-
-          occurredAt,
-
-          effectiveDate:
-            occurrenceDate,
-
-          recurringTransactionId:
-            recurring.id,
         });
-
-      existingGeneratedKeys.add(
-        existingKey
-      );
-
-      affectedFinancialMonthIds.add(
-        financialMonth.id
-      );
-
-      createdCount += 1;
     }
+
+    /*
+    NEXT OCCURRENCE
+    */
+
+    currentDate =
+      addFrequency(
+        currentDate,
+        recurrence.frequency
+      );
   }
-
-  for (
-    const financialMonthId
-    of affectedFinancialMonthIds
-  ) {
-
-    await recalculateFinancialMonth(
-      financialMonthId
-    );
-  }
-
-  return {
-
-    month,
-
-    createdCount,
-
-    skippedCount,
-  };
 }

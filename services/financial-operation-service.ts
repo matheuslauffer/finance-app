@@ -36,6 +36,10 @@ import {
   resolveFinancialMonth,
 } from './financial-month-service';
 
+import {
+  ensureFinancialProjectionCoverage,
+} from './ensure-financial-projection-coverage-service';
+
 export async function
 createFinancialOperation(
   input: CreateFinancialOperationInput,
@@ -223,6 +227,9 @@ createFinancialOperation(
       5. CREATE INSTALLMENTS
       */
 
+      let lastInstallmentDate:
+        Date | null = null;
+
       for (
         let i = 0;
         i < input.installmentCount;
@@ -234,6 +241,9 @@ createFinancialOperation(
             startDate,
             i
           );
+
+        lastInstallmentDate =
+          installmentDate;
 
         const installmentFinancialMonth =
           await resolveFinancialMonth(
@@ -332,6 +342,27 @@ createFinancialOperation(
           installmentFinancialMonth.id
         );
       }
+
+      if (
+          lastInstallmentDate
+        ) {
+
+          const lastReferenceMonth =
+            lastInstallmentDate
+
+              .toISOString()
+
+              .slice(0, 7);
+
+          await ensureFinancialProjectionCoverage({
+
+            userId:
+              input.userId,
+
+            untilReferenceMonth:
+              lastReferenceMonth,
+          });
+        }
 
       return {
 

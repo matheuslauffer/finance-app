@@ -113,13 +113,13 @@ generateRecurringTransactions(
   }
 
   if (
-      !recurrence.isActive
-      ||
-      recurrence.endedAt
-    ) {
+    !recurrence.isActive
+    ||
+    recurrence.endedAt
+  ) {
 
-      return;
-    }
+    return;
+  }
 
   /*
   GENERATE 12 MONTHS

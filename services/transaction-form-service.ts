@@ -12,6 +12,8 @@ import {
   eq,
   and,
   asc,
+  isNull,
+  isNotNull,
 } from 'drizzle-orm';
 
 export async function
@@ -20,10 +22,18 @@ getTransactionFormData(
 ) {
 
   const [
-    categoriesResult,
+
+    mainCategoriesResult,
+
+    subcategoriesResult,
 
     paymentMethodsResult,
+
   ] = await Promise.all([
+
+    /*
+    MAIN CATEGORIES
+    */
 
     db
       .select()
@@ -39,6 +49,10 @@ getTransactionFormData(
           eq(
             categories.isActive,
             true
+          ),
+
+          isNull(
+            categories.parentCategoryId
           )
         )
       )
@@ -47,6 +61,41 @@ getTransactionFormData(
           categories.name
         )
       ),
+
+    /*
+    SUBCATEGORIES
+    */
+
+    db
+      .select()
+      .from(categories)
+      .where(
+        and(
+
+          eq(
+            categories.userId,
+            userId
+          ),
+
+          eq(
+            categories.isActive,
+            true
+          ),
+
+          isNotNull(
+            categories.parentCategoryId
+          )
+        )
+      )
+      .orderBy(
+        asc(
+          categories.name
+        )
+      ),
+
+    /*
+    PAYMENT METHODS
+    */
 
     db
       .select()
@@ -70,8 +119,11 @@ getTransactionFormData(
 
   return {
 
-    categories:
-      categoriesResult,
+    mainCategories:
+      mainCategoriesResult,
+
+    subcategories:
+      subcategoriesResult,
 
     paymentMethods:
       paymentMethodsResult,

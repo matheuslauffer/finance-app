@@ -18,15 +18,27 @@ getCurrentFinancialMonth(
   userId: string
 ) {
 
+  /*
+  CURRENT MONTH
+  */
+
   const currentMonth =
     getCurrentMonth();
 
+  /*
+  FIND EXISTING
+  */
+
   const [month] =
     await db
+
       .select()
+
       .from(financialMonths)
+
       .where(
         and(
+
           eq(
             financialMonths.userId,
             userId
@@ -41,34 +53,54 @@ getCurrentFinancialMonth(
         )
       );
 
-    if (month) {
+  /*
+  RETURN IF EXISTS
+  */
+
+  if (month) {
 
     return month;
   }
 
-  const [createdMonth] =
-    await db
-      .insert(financialMonths)
-      .values({
+  /*
+  CREATE MONTH
+  */
 
-        userId,
+  try {
 
-        referenceMonth:
-          currentMonth,
+    const [createdMonth] =
+      await db
 
-        projectedIncome:
-          '0',
+        .insert(financialMonths)
 
-        projectedExpense:
-          '0',
+        .values({
 
-        projectedBalance:
-          '0',
+          userId,
 
-        committedAmount:
-          '0',
-      })
-      .returning();
+          referenceMonth:
+            currentMonth,
 
-  return createdMonth;
+          projectedIncome:
+            '0',
+
+          projectedExpense:
+            '0',
+
+          projectedBalance:
+            '0',
+
+          committedAmount:
+            '0',
+        })
+
+        .returning();
+
+    return createdMonth;
+
+  } catch (error) {
+
+    console.error(error);
+
+    throw error;
+  }
 }

@@ -1,0 +1,1 @@
+ALTER TYPE "public"."recurrence_frequency" ADD VALUE 'BIWEEKLY' BEFORE 'MONTHLY';

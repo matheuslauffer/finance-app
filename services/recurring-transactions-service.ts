@@ -1,12 +1,12 @@
 import { db } from '@/db';
 
 import {
-  recurringTransactions,
-} from '@/db/schema/recurring-transactions';
+  recurrences,
+} from '@/db/schema/recurrences';
 
 import {
-  eq,
   desc,
+  eq,
 } from 'drizzle-orm';
 
 export async function
@@ -19,20 +19,19 @@ getRecurringTransactions(
     .select()
 
     .from(
-      recurringTransactions
+      recurrences
     )
 
     .where(
       eq(
-        recurringTransactions.userId,
+        recurrences.userId,
         userId
       )
     )
 
     .orderBy(
       desc(
-        recurringTransactions
-          .createdAt
+        recurrences.nextOccurrence
       )
     );
 }

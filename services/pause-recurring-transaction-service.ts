@@ -1,8 +1,8 @@
 import { db } from '@/db';
 
 import {
-  recurringTransactions,
-} from '@/db/schema/recurring-transactions';
+  recurrences,
+} from '@/db/schema/recurrences';
 
 import {
   eq,
@@ -10,26 +10,25 @@ import {
 
 export async function
 pauseRecurringTransaction(
-  recurringTransactionId: string
+  recurrenceId: string
 ) {
 
   await db
 
     .update(
-      recurringTransactions
+      recurrences
     )
 
     .set({
 
-      status:
-        'PAUSED',
+      isActive:
+        false,
     })
 
     .where(
       eq(
-        recurringTransactions.id,
-
-        recurringTransactionId
+        recurrences.id,
+        recurrenceId
       )
     );
 }

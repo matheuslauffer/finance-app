@@ -2,12 +2,57 @@ import {
   Sidebar,
 } from '@/app/components/sidebar';
 
-export default function
+import {
+  auth,
+  currentUser,
+} from '@clerk/nextjs/server';
+
+import {
+  ensureUserExists,
+} from '@/services/user-service';
+
+export default async function
 AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+
+  /*
+  AUTH
+  */
+
+  const { userId } =
+    await auth();
+
+  /*
+  SYNC USER
+  */
+
+  if (userId) {
+
+    const clerkUser =
+      await currentUser();
+
+    if (clerkUser) {
+
+      await ensureUserExists({
+
+        id:
+          clerkUser.id,
+
+        email:
+          clerkUser
+            .emailAddresses?.[0]
+            ?.emailAddress
+          ?? '',
+
+        name:
+          clerkUser.fullName
+          ?? 'Usuário',
+      });
+    }
+  }
 
   return (
 
@@ -35,7 +80,7 @@ AppLayout({
           h-16
           bg-white
           border-b
-            shadow-sm
+          shadow-sm
           px-6
           flex
           items-center

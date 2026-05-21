@@ -29,4 +29,6 @@ export type CreateFinancialOperationInput =
   occurredAt: Date;
 
   effectiveDate: string;
+
+  dueDate: string;
 };

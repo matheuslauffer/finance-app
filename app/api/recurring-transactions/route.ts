@@ -9,12 +9,16 @@ import {
 import { db } from '@/db';
 
 import {
-  recurringTransactions,
-} from '@/db/schema/recurring-transactions';
-
-import {
   updateRecurringTransaction,
 } from '@/services/update-recurring-transaction-service';
+
+import {
+  recurrences,
+} from '@/db/schema/recurrences';
+
+import {
+  generateRecurringTransactions,
+} from '@/services/generate-recurring-transactions';
 
 export async function
 POST(
@@ -129,21 +133,48 @@ POST(
   CREATE
   */
 
-  await db
+  const [recurrence] =
+    await db
 
-    .insert(
-      recurringTransactions
-    )
+      .insert(
+        recurrences
+      )
 
-    .values({
+      .values({
 
-      userId,
+        userId,
 
-      ...payload,
+        categoryId:
+          payload.categoryId,
 
-      status:
-        'ACTIVE',
-    });
+        paymentMethodId:
+          payload.paymentMethodId,
+
+        description:
+          payload.description,
+
+        amount:
+          payload.amount,
+
+        frequency:
+          payload.frequency,
+
+        nextOccurrence:
+          payload.effectiveFrom,
+
+        isActive:
+          true,
+      })
+
+      .returning();
+
+  /*
+  GENERATE SNAPSHOTS
+  */
+
+  await generateRecurringTransactions(
+    recurrence.id
+  );
 
   return NextResponse.redirect(
 

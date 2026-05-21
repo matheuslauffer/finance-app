@@ -1,9 +1,9 @@
 import {
   pgTable,
   uuid,
-  date,
   text,
-  numeric
+  numeric,
+  varchar
 } from 'drizzle-orm/pg-core';
 
 import { users }
@@ -22,7 +22,7 @@ export const financialMonths =
         .notNull(),
 
       referenceMonth:
-        date('reference_month')
+        varchar('reference_month', { length: 7 })
           .notNull(),
 
       projectedIncome:

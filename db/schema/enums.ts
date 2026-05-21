@@ -101,6 +101,7 @@ export const recurrenceFrequencyEnum =
     [
       'DAILY',
       'WEEKLY',
+      'BIWEEKLY',
       'MONTHLY',
       'YEARLY',
     ]

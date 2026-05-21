@@ -195,8 +195,12 @@ NewTransactionPage() {
 
         <TransactionForm
 
-          categories={
-            formData.categories
+          mainCategories={
+            formData.mainCategories
+          }
+
+          subcategories={
+            formData.subcategories
           }
 
           paymentMethods={

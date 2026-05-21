@@ -39,6 +39,9 @@ type Input = {
 
   effectiveDate:
     string;
+
+  dueDate:
+    string;
 };
 
 export async function

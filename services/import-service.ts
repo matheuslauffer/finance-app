@@ -33,6 +33,10 @@ import {
   recalculateFinancialMonth,
 } from './recalculate-financial-month';
 
+import {
+  getReferenceMonth,
+} from '@/lib/reference-month';
+
 function
 inferPaymentMethodType(
   paymentMethod: string
@@ -304,9 +308,9 @@ importTransactions(
     */
 
     const referenceMonth =
-      row.transactionDate
-        .slice(0, 7)
-      + '-01';
+      getReferenceMonth(
+        new Date(row.transactionDate)
+      );
 
     let [financialMonth] =
       await db
@@ -389,6 +393,9 @@ importTransactions(
           ),
 
         effectiveDate:
+          row.transactionDate,
+
+        dueDate:
           row.transactionDate,
       });
 

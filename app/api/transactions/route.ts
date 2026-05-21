@@ -74,6 +74,23 @@ export async function POST(
     ) === 'on';
 
   /*
+  DATES
+  */
+
+  const effectiveDate =
+    formData.get(
+      'effectiveDate'
+    ) as string;
+
+  const dueDate =
+    (
+      formData.get(
+        'dueDate'
+      ) as string | null
+    )
+    ?? effectiveDate;
+
+  /*
   INSTALLMENTS
   */
 
@@ -137,10 +154,9 @@ export async function POST(
             | 'INCOME'
             | 'EXPENSE',
 
-        effectiveDate:
-          formData.get(
-            'effectiveDate'
-          ) as string,
+        effectiveDate,
+
+        dueDate,
       });
 
     return Response.json(
@@ -209,14 +225,14 @@ export async function POST(
           ) as string,
 
         effectiveFrom:
-          formData.get(
-            'effectiveDate'
-          ) as string,
+          effectiveDate,
 
         effectiveUntil:
           effectiveUntil
             ? effectiveUntil as string
             : null,
+
+        dueDate,
 
         status:
           'ACTIVE',
@@ -236,59 +252,56 @@ export async function POST(
 
   await createFinancialOperation({
 
-      userId,
+    userId,
 
-      paymentMethodId:
-        formData.get(
-          'paymentMethodId'
-        ) as string,
+    paymentMethodId:
+      formData.get(
+        'paymentMethodId'
+      ) as string,
 
-      categoryId:
-        formData.get(
-          'categoryId'
-        ) as string,
+    categoryId:
+      formData.get(
+        'categoryId'
+      ) as string,
 
-      description:
-        formData.get(
-          'description'
-        ) as string,
+    description:
+      formData.get(
+        'description'
+      ) as string,
 
-      amount:
-        formData.get(
-          'amount'
-        ) as string,
+    amount:
+      formData.get(
+        'amount'
+      ) as string,
 
-      operationType:
-        installmentCount > 1
+    operationType:
+      installmentCount > 1
 
-          ? 'INSTALLMENT_PURCHASE'
+        ? 'INSTALLMENT_PURCHASE'
 
-          : 'PURCHASE',
+        : 'PURCHASE',
 
-      transactionType:
-        formData.get(
-          'transactionType'
-        ) as
-          | 'INCOME'
-          | 'EXPENSE',
+    transactionType:
+      formData.get(
+        'transactionType'
+      ) as
+        | 'INCOME'
+        | 'EXPENSE',
 
-      status:
-        'CONFIRMED',
+    status:
+      'CONFIRMED',
 
-      occurredAt:
-        new Date(
-          formData.get(
-            'effectiveDate'
-          ) as string
-        ),
+    occurredAt:
+      new Date(
+        effectiveDate
+      ),
 
-      effectiveDate:
-        formData.get(
-          'effectiveDate'
-        ) as string,
+    effectiveDate,
 
-      installmentCount,
-    });
+    dueDate,
+
+    installmentCount,
+  });
 
   return Response.redirect(
     new URL(

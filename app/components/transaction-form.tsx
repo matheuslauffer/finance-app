@@ -10,27 +10,12 @@ import {
 
 type Props = {
 
-  categories: {
-    id: string;
-
-    name: string;
-
-    parentCategoryId:
-      string | null;
-  }[];
-
-  paymentMethods: {
-    id: string;
-
-    name: string;
-
-    supportsInstallments:
-      boolean;
-  }[];
-
   initialData?: {
-
     id: string;
+
+    paymentMethodId: string;
+
+    categoryId: string;
 
     description: string;
 
@@ -40,20 +25,44 @@ type Props = {
       | 'INCOME'
       | 'EXPENSE';
 
-    categoryId:
-      string;
+    effectiveDate: string;
 
-    paymentMethodId:
-      string;
-
-    effectiveDate:
-      string;
+    dueDate?: string;
   };
+
+  mainCategories: {
+
+    id: string;
+
+    name: string;
+
+    parentCategoryId: string | null;
+  }[];
+
+  subcategories: {
+
+    id: string;
+
+    name: string;
+
+    parentCategoryId: string | null;
+  }[];
+
+  paymentMethods: {
+    id: string;
+
+    name: string;
+
+    supportsInstallments: boolean;
+
+    methodType: string;
+  }[];
 };
 
 export function
 TransactionForm({
-  categories,
+  mainCategories,
+  subcategories,
   paymentMethods,
   initialData,
 }: Props) {
@@ -83,6 +92,17 @@ TransactionForm({
   );
 
   const [
+    selectedMainCategoryId,
+    setSelectedMainCategoryId,
+  ] = useState(
+
+    initialData
+      ?.categoryId
+
+    ?? mainCategories[0]?.id
+  );
+
+  const [
     installmentMode,
     setInstallmentMode,
   ] = useState('1');
@@ -103,6 +123,16 @@ TransactionForm({
         );
       }
     );
+
+  const filteredSubcategories =
+  subcategories.filter(
+    (subcategory) => (
+
+      subcategory.parentCategoryId
+      ===
+      selectedMainCategoryId
+    )
+  );
 
   const [
     amount,
@@ -152,7 +182,7 @@ TransactionForm({
     }
 
     const parent =
-      categories.find(
+      mainCategories.find(
         (item) => (
           item.id
           === category.parentCategoryId
@@ -378,58 +408,126 @@ TransactionForm({
           gap-2
         ">
 
-          <label className="
-            text-sm
-            font-medium
-            text-zinc-700
+          <div className="
+            grid
+            grid-cols-1
+            md:grid-cols-2
+            gap-6
           ">
-            Categoria
-          </label>
 
-          <select
-            name="categoryId"
+            {/* MAIN CATEGORY */}
 
-            required
+            <div className="
+              flex
+              flex-col
+              gap-2
+            ">
 
-            defaultValue={
-              initialData
-                ?.categoryId
-            }
+              <label className="
+                text-sm
+                font-medium
+                text-zinc-700
+              ">
+                Categoria
+              </label>
 
-            className="
-              border
-              border-zinc-300
-              rounded-2xl
-              px-4
-              py-3
-              bg-white
-              text-zinc-900
-              placeholder:text-zinc-400
-              appearance-none
-              opacity-100
-            "
-          >
+              <select
+                value={
+                  selectedMainCategoryId
+                }
 
-            {
-              categories.map(
-                (category) => (
+                onChange={(e) => {
 
-                  <option
-                    key={category.id}
+                  setSelectedMainCategoryId(
+                    e.target.value
+                  );
+                }}
 
-                    value={category.id}
-                  >
-                    {
-                      getCategoryLabel(
-                        category
-                      )
-                    }
-                  </option>
-                )
-              )
-            }
+                className="
+                  border
+                  border-zinc-300
+                  rounded-2xl
+                  px-4
+                  py-3
+                  bg-white
+                  text-zinc-900
+                "
+              >
 
-          </select>
+                {
+                  mainCategories.map(
+                    (category) => (
+
+                      <option
+                        key={category.id}
+                        value={category.id}
+                      >
+                        {category.name}
+                      </option>
+                    )
+                  )
+                }
+
+              </select>
+
+            </div>
+
+            {/* SUBCATEGORY */}
+
+            <div className="
+              flex
+              flex-col
+              gap-2
+            ">
+
+              <label className="
+                text-sm
+                font-medium
+                text-zinc-700
+              ">
+                Subcategoria
+              </label>
+
+              <select
+                name="categoryId"
+
+                required
+
+                defaultValue={
+                  initialData
+                    ?.categoryId
+                }
+
+                className="
+                  border
+                  border-zinc-300
+                  rounded-2xl
+                  px-4
+                  py-3
+                  bg-white
+                  text-zinc-900
+                "
+              >
+
+                {
+                  filteredSubcategories.map(
+                    (subcategory) => (
+
+                      <option
+                        key={subcategory.id}
+                        value={subcategory.id}
+                      >
+                        {subcategory.name}
+                      </option>
+                    )
+                  )
+                }
+
+              </select>
+
+            </div>
+
+          </div>
 
         </div>
 

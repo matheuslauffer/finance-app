@@ -1,0 +1,1 @@
+ALTER TABLE "recurrences" ADD COLUMN "ended_at" date;

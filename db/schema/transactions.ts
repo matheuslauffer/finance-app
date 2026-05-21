@@ -95,6 +95,9 @@ export const transactions = pgTable(
     text(
       'recurring_transaction_id'
     ),
-  }
 
+    dueDate: date(
+      'due_date'
+    ),
+  }
 );

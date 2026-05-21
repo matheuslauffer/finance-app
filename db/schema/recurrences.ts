@@ -56,5 +56,7 @@ export const recurrences = pgTable(
     isActive: boolean('is_active')
       .default(true)
       .notNull(),
+
+    endedAt: date('ended_at')
   }
 );

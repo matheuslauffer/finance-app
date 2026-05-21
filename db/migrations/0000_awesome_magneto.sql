@@ -29,7 +29,7 @@ CREATE TABLE "categories" (
 CREATE TABLE "financial_months" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" text NOT NULL,
-	"reference_month" date NOT NULL,
+	"reference_month" varchar(7) NOT NULL,
 	"projected_income" numeric DEFAULT '0' NOT NULL,
 	"projected_expense" numeric DEFAULT '0' NOT NULL,
 	"projected_balance" numeric DEFAULT '0' NOT NULL,
@@ -106,18 +106,13 @@ CREATE TABLE "recurrences" (
 --> statement-breakpoint
 CREATE TABLE "recurring_transactions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" text NOT NULL,
-	"description" text NOT NULL,
-	"amount" numeric NOT NULL,
-	"transaction_type" text NOT NULL,
-	"frequency" text NOT NULL,
-	"status" text DEFAULT 'ACTIVE' NOT NULL,
-	"effective_from" date NOT NULL,
-	"effective_until" date,
-	"category_id" text NOT NULL,
-	"payment_method_id" text NOT NULL,
-	"parent_recurring_transaction_id" text,
-	"created_at" timestamp DEFAULT now() NOT NULL
+	"recurrence_id" uuid NOT NULL,
+	"financial_month_id" uuid NOT NULL,
+	"projected_amount" numeric(14, 2) NOT NULL,
+	"status" text DEFAULT 'PROJECTED' NOT NULL,
+	"due_date" date NOT NULL,
+	"generated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "recurring_transactions_recurrence_id_financial_month_id_unique" UNIQUE("recurrence_id","financial_month_id")
 );
 --> statement-breakpoint
 CREATE TABLE "transactions" (
@@ -135,7 +130,8 @@ CREATE TABLE "transactions" (
 	"occurred_at" timestamp NOT NULL,
 	"effective_date" date NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"recurring_transaction_id" text
+	"recurring_transaction_id" text,
+	"due_date" date
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
@@ -159,6 +155,8 @@ ALTER TABLE "payment_methods" ADD CONSTRAINT "payment_methods_user_id_users_id_f
 ALTER TABLE "recurrences" ADD CONSTRAINT "recurrences_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "recurrences" ADD CONSTRAINT "recurrences_category_id_categories_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."categories"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "recurrences" ADD CONSTRAINT "recurrences_payment_method_id_payment_methods_id_fk" FOREIGN KEY ("payment_method_id") REFERENCES "public"."payment_methods"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "recurring_transactions" ADD CONSTRAINT "recurring_transactions_recurrence_id_recurrences_id_fk" FOREIGN KEY ("recurrence_id") REFERENCES "public"."recurrences"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "recurring_transactions" ADD CONSTRAINT "recurring_transactions_financial_month_id_financial_months_id_fk" FOREIGN KEY ("financial_month_id") REFERENCES "public"."financial_months"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_financial_operation_id_financial_operations_id_fk" FOREIGN KEY ("financial_operation_id") REFERENCES "public"."financial_operations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

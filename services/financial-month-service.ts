@@ -13,6 +13,10 @@ import {
   eq,
 } from 'drizzle-orm';
 
+import {
+  getReferenceMonth,
+} from '@/lib/reference-month';
+
 export async function
 resolveFinancialMonth(
 
@@ -91,18 +95,9 @@ resolveFinancialMonth(
   */
 
   const referenceMonth =
-  new Date(
-
-    baseDate.getFullYear(),
-
-    baseDate.getMonth(),
-
-    1
-  )
-
-    .toISOString()
-
-    .split('T')[0];
+    getReferenceMonth(
+      baseDate
+    );
 
   /*
   FIND MONTH

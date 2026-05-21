@@ -12,6 +12,10 @@ import {
   getTransactions,
 } from '@/services/transaction-service';
 
+import {
+  formatCurrency,
+} from '@/lib/currency';
+
 type Props = {
   searchParams:
     Promise<{
@@ -269,9 +273,11 @@ TransactionsPage({
                   ">
                     R$
                     {
-                      Number(
-                        transaction.amount
-                      )formatCurrency(value)
+                      formatCurrency(
+                        Number(
+                          transaction.amount
+                        )
+                      )
                     }
                   </p>
 

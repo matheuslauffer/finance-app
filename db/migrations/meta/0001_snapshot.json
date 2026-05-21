@@ -1,6 +1,6 @@
 {
-  "id": "afc3235a-cb8a-4d92-9976-3a7424876465",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "53c5b07c-e2b9-4a11-9ff8-313d60c157ca",
+  "prevId": "afc3235a-cb8a-4d92-9976-3a7424876465",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1148,6 +1148,7 @@
       "values": [
         "DAILY",
         "WEEKLY",
+        "BIWEEKLY",
         "MONTHLY",
         "YEARLY"
       ]

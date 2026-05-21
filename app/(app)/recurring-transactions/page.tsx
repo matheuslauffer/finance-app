@@ -78,9 +78,7 @@ RecurringTransactionsPage() {
           <GenerateRecurringTransactionsButton />
 
           <Link
-            href="
-              /recurring-transactions/new
-            "
+            href="/recurring-transactions/new"
 
             className="
               bg-zinc-900
@@ -168,7 +166,7 @@ RecurringTransactionsPage() {
                 font-semibold
                 text-zinc-600
               ">
-                Vigência
+                Próxima ocorrência
               </th>
 
               <th className="
@@ -177,9 +175,9 @@ RecurringTransactionsPage() {
                 text-sm
                 font-semibold
                 text-zinc-600
-            ">
+              ">
                 Ações
-            </th>
+              </th>
 
             </tr>
 
@@ -189,215 +187,224 @@ RecurringTransactionsPage() {
 
             {
               recurring.map(
-                (item) => (
+                (item) => {
 
-                  <tr
-                    key={item.id}
+                  const status =
 
-                    className="
-                      border-b
-                      border-zinc-100
-                      hover:bg-zinc-50
-                      transition
-                    "
-                  >
+                    item.endedAt
 
-                    <td className="
-                      p-5
-                      font-medium
-                      text-zinc-900
-                    ">
-                      {
-                        item.description
-                      }
-                    </td>
+                      ? 'ENDED'
 
-                    <td className="
-                      p-5
-                      text-zinc-600
-                    ">
-                      {
-                        item.frequency
-                      }
-                    </td>
+                      : item.isActive
 
-                    <td className="
-                      p-5
-                      text-zinc-900
-                      font-semibold
-                    ">
+                        ? 'ACTIVE'
 
-                      {
-                        Number(
-                          item.amount
-                        ).toLocaleString(
-                          'pt-BR',
-                          {
+                        : 'PAUSED';
 
-                            style:
-                              'currency',
+                  return (
 
-                            currency:
-                              'BRL',
-                          }
-                        )
-                      }
+                    <tr
+                      key={item.id}
 
-                    </td>
-
-                    <td className="
-                      p-5
-                    ">
-
-                      <span
-                        className={`
-                          px-3
-                          py-1
-                          rounded-full
-                          text-xs
-                          font-medium
-
-                          ${
-                            item.status
-                            === 'ACTIVE'
-
-                              ? `
-                                bg-emerald-100
-                                text-emerald-700
-                              `
-
-                              : item.status
-                              === 'PAUSED'
-
-                                ? `
-                                  bg-amber-100
-                                  text-amber-700
-                                `
-
-                                : `
-                                  bg-zinc-200
-                                  text-zinc-700
-                                `
-                          }
-                        `}
-                      >
-
-                        {
-                          item.status
-                        }
-
-                      </span>
-
-                    </td>
-
-                    <td className="
-                      p-5
-                      text-zinc-600
-                    ">
-
-                      {
-                        item.effectiveFrom
-                      }
-
-                      {
-                        item.effectiveUntil
-
-                          ? ` até ${item.effectiveUntil}`
-
-                          : ''
-                      }
-
-                    </td>
+                      className="
+                        border-b
+                        border-zinc-100
+                        hover:bg-zinc-50
+                        transition
+                      "
+                    >
 
                       <td className="
-                          p-5
-                        ">
+                        p-5
+                        font-medium
+                        text-zinc-900
+                      ">
+                        {
+                          item.description
+                        }
+                      </td>
+
+                      <td className="
+                        p-5
+                        text-zinc-600
+                      ">
+                        {
+                          item.frequency
+                        }
+                      </td>
+
+                      <td className="
+                        p-5
+                        text-zinc-900
+                        font-semibold
+                      ">
+
+                        {
+                          Number(
+                            item.amount
+                          ).toLocaleString(
+                            'pt-BR',
+                            {
+
+                              style:
+                                'currency',
+
+                              currency:
+                                'BRL',
+                            }
+                          )
+                        }
+
+                      </td>
+
+                      <td className="
+                        p-5
+                      ">
+
+                        <span
+                          className={`
+                            px-3
+                            py-1
+                            rounded-full
+                            text-xs
+                            font-medium
+
+                            ${
+                              status
+                              === 'ACTIVE'
+
+                                ? `
+                                  bg-emerald-100
+                                  text-emerald-700
+                                `
+
+                                : status
+                                === 'PAUSED'
+
+                                  ? `
+                                    bg-amber-100
+                                    text-amber-700
+                                  `
+
+                                  : `
+                                    bg-zinc-200
+                                    text-zinc-700
+                                  `
+                            }
+                          `}
+                        >
+
+                          {
+                            status
+                          }
+
+                        </span>
+
+                      </td>
+
+                      <td className="
+                        p-5
+                        text-zinc-600
+                      ">
+
+                        {
+                          item.nextOccurrence
+                        }
+
+                      </td>
+
+                      <td className="
+                        p-5
+                      ">
 
                         <div className="
-                            flex
-                            items-center
-                            gap-3
+                          flex
+                          items-center
+                          gap-3
                         ">
 
-                            <Link
+                          <Link
                             href={`
-                                /recurring-transactions/${item.id}/edit
+                              /recurring-transactions/${item.id}/edit
                             `}
 
                             className="
-                                text-sm
-                                font-medium
-                                text-zinc-700
-                                hover:text-zinc-900
+                              text-sm
+                              font-medium
+                              text-zinc-700
+                              hover:text-zinc-900
                             "
-                            >
+                          >
                             Editar
-                            </Link>
+                          </Link>
 
-                            {
-                            item.status === 'ACTIVE'
+                          {
+                            item.isActive
+                            &&
+                            !item.endedAt
                             && (
 
-                                <form
+                              <form
                                 action={`
-                                    /api/recurring-transactions/${item.id}/pause
+                                  /api/recurring-transactions/${item.id}/pause
                                 `}
 
                                 method="POST"
-                                >
+                              >
 
                                 <button
-                                    type="submit"
+                                  type="submit"
 
-                                    className="
+                                  className="
                                     text-sm
                                     font-medium
                                     text-amber-700
                                     hover:text-amber-900
-                                    "
+                                  "
                                 >
-                                    Pausar
+                                  Pausar
                                 </button>
 
-                                </form>
-
-                                
+                              </form>
                             )
-                            }
-                            {
-                                item.status !== 'ENDED'
-                                && (
+                          }
 
-                                    <form
-                                    action={`
-                                        /api/recurring-transactions/${item.id}/end
-                                    `}
+                          {
+                            !item.endedAt
+                            && (
 
-                                    method="POST"
-                                    >
+                              <form
+                                action={`
+                                  /api/recurring-transactions/${item.id}/end
+                                `}
 
-                                    <button
-                                        type="submit"
+                                method="POST"
+                              >
 
-                                        className="
-                                        text-sm
-                                        font-medium
-                                        text-red-700
-                                        hover:text-red-900
-                                        "
-                                    >
-                                        Encerrar
-                                    </button>
+                                <button
+                                  type="submit"
 
-                                    </form>
-                                )
-                                }
+                                  className="
+                                    text-sm
+                                    font-medium
+                                    text-red-700
+                                    hover:text-red-900
+                                  "
+                                >
+                                  Encerrar
+                                </button>
+
+                              </form>
+                            )
+                          }
+
                         </div>
 
-                    </td>
+                      </td>
 
-                  </tr>
-                )
+                    </tr>
+                  );
+                }
               )
             }
 

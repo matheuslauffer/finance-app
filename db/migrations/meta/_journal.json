@@ -29,6 +29,13 @@
       "when": 1779386229974,
       "tag": "0003_fair_odin",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1779402089211,
+      "tag": "0004_premium_agent_brand",
+      "breakpoints": true
     }
   ]
 }

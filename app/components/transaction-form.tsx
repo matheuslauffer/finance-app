@@ -163,38 +163,6 @@ TransactionForm({
   );
 
   function
-  getCategoryLabel(
-    category: {
-      id: string;
-
-      name: string;
-
-      parentCategoryId:
-        string | null;
-    }
-  ) {
-
-    if (
-      !category.parentCategoryId
-    ) {
-
-      return category.name;
-    }
-
-    const parent =
-      mainCategories.find(
-        (item) => (
-          item.id
-          === category.parentCategoryId
-        )
-      );
-
-    return parent
-      ? `${parent.name} / ${category.name}`
-      : category.name;
-  }
-
-  function
   formatCurrency(
     value: string
   ) {
@@ -434,7 +402,7 @@ TransactionForm({
               <select
 
                 name="mainCategoryId"
-                
+
                 value={
                   selectedMainCategoryId
                 }
@@ -492,9 +460,15 @@ TransactionForm({
               </label>
 
               <select
-                name="subcategoryId"
+                name="categoryId"
 
-                defaultValue=""
+                defaultValue={
+                  filteredSubcategories.length > 0
+
+                    ? ''
+
+                    : selectedMainCategoryId
+                }
 
                 required={
                   filteredSubcategories.length > 0
@@ -511,22 +485,40 @@ TransactionForm({
                 "
               >
 
-                <option value="">
-                  Selecione
-                </option>
-
                 {
-                  filteredSubcategories.map(
-                    (subcategory) => (
+                  filteredSubcategories.length > 0
 
-                      <option
-                        key={subcategory.id}
-                        value={subcategory.id}
-                      >
-                        {subcategory.name}
-                      </option>
-                    )
-                  )
+                    ? (
+                        <>
+
+                          <option value="">
+                            Selecione
+                          </option>
+
+                          {
+                            filteredSubcategories.map(
+                              (subcategory) => (
+
+                                <option
+                                  key={subcategory.id}
+                                  value={subcategory.id}
+                                >
+                                  {subcategory.name}
+                                </option>
+                              )
+                            )
+                          }
+
+                        </>
+                      )
+
+                    : (
+                        <option
+                          value={selectedMainCategoryId}
+                        >
+                          Sem subcategoria
+                        </option>
+                      )
                 }
 
               </select>

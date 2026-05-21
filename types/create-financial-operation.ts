@@ -31,4 +31,6 @@ export type CreateFinancialOperationInput =
   effectiveDate: string;
 
   dueDate: string;
+
+  recurringTransactionId?: string;
 };

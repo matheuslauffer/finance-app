@@ -5,8 +5,8 @@ import {
 } from '@/db/schema/recurrences';
 
 import {
-  generateRecurringTransactions,
-} from './generate-recurring-transactions-service';
+  ensureFinancialProjectionCoverage,
+} from '@/services/ensure-financial-projection-coverage-service';
 
 type Input = {
 
@@ -76,9 +76,13 @@ createRecurrence(
 
       .returning();
 
-  await generateRecurringTransactions(
-    recurrence.id
-  );
+      await ensureFinancialProjectionCoverage({
+
+        userId: input.userId,
+
+        untilReferenceMonth:
+            '2028-12',
+        });
 
   return recurrence;
 }

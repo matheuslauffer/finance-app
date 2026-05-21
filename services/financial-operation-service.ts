@@ -69,6 +69,7 @@ createFinancialOperation(
 
             totalAmount:
               input.amount,
+              
           })
 
           .returning();
@@ -134,6 +135,9 @@ createFinancialOperation(
 
               effectiveDate:
                 input.effectiveDate,
+
+              recurringTransactionId:
+                input.recurringTransactionId,
             })
 
             .returning();

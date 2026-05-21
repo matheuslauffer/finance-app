@@ -54,6 +54,7 @@ export const paymentMethodTypeEnum = pgEnum(
     'BOLETO',
     'BANK_TRANSFER',
     'CREDIT_LINE',
+    'AUTO_DEBIT',
   ]
 );
 

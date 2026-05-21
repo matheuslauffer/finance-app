@@ -21,6 +21,18 @@ import {
   getReferenceMonth,
 } from '@/lib/reference-month';
 
+import{
+  isAutomaticPaymentMethod,
+} from '@/lib/payment-method-behavior';
+
+import {
+  paymentMethods,
+} from '@/db/schema/payment-methods';
+
+import {
+  createFinancialOperation,
+} from '@/services/financial-operation-service';
+
 function
 addFrequency(
   date: Date,
@@ -111,6 +123,32 @@ generateRecurringTransactions(
       'Recurrence not found'
     );
   }
+
+  const [paymentMethod] =
+  await db
+
+    .select()
+
+    .from(paymentMethods)
+
+    .where(
+      eq(
+        paymentMethods.id,
+        recurrence.paymentMethodId
+      )
+    );
+
+  if (!paymentMethod) {
+
+    throw new Error(
+      'Payment method not found'
+    );
+  }
+
+  const isAutomatic =
+  isAutomaticPaymentMethod(
+    paymentMethod.methodType
+  );
 
   if (
     !recurrence.isActive
@@ -244,7 +282,8 @@ generateRecurringTransactions(
 
     if (!existing) {
 
-      await db
+      const [snapshot] =
+        await db
 
         .insert(
           recurringTransactions
@@ -267,8 +306,61 @@ generateRecurringTransactions(
               .split('T')[0],
 
           status:
-            'PROJECTED',
+            isAutomatic
+
+              ? 'FULFILLED'
+
+              : 'PROJECTED',
+        })
+
+      .returning();
+
+      if (isAutomatic) {
+
+        await createFinancialOperation({
+
+          userId:
+            recurrence.userId,
+
+          paymentMethodId:
+            recurrence.paymentMethodId,
+
+          categoryId:
+            recurrence.categoryId,
+
+          description:
+            recurrence.description,
+
+          amount:
+            recurrence.amount,
+
+          operationType:
+            'PURCHASE',
+
+          transactionType:
+            recurrence.transactionType,
+
+          status:
+            'CONFIRMED',
+
+          occurredAt:
+            currentDate,
+
+          effectiveDate:
+            currentDate
+              .toISOString()
+              .split('T')[0],
+
+          dueDate:
+            currentDate
+              .toISOString()
+              .split('T')[0],
+
+          recurringTransactionId:
+            snapshot.id,
         });
+      }
+
     }
 
     /*

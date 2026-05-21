@@ -48,5 +48,13 @@ export const paymentMethods = pgTable(
       )
         .notNull()
         .default(false),
-      }
+      
+    requiresManualPayment: 
+      boolean(
+        'requires_manual_payment'
+      )
+      .notNull()
+      .default(false)
+      
+  }
 );

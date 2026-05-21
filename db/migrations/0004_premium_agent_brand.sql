@@ -1,0 +1,1 @@
+ALTER TABLE "payment_methods" ADD COLUMN "requires_manual_payment" boolean DEFAULT false NOT NULL;

@@ -84,9 +84,17 @@ POST(
         | 'YEARLY',
 
     categoryId:
+    (
+      formData.get(
+        'subcategoryId'
+      )
+
+      ||
+
       formData.get(
         'categoryId'
-      ) as string,
+      )
+    ) as string,
 
     paymentMethodId:
       formData.get(
@@ -164,6 +172,13 @@ POST(
 
         isActive:
           true,
+
+        transactionType:
+          formData.get(
+            'transactionType'
+          ) as
+            | 'INCOME'
+            | 'EXPENSE',
       })
 
       .returning();

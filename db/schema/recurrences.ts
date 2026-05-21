@@ -57,6 +57,15 @@ export const recurrences = pgTable(
       .default(true)
       .notNull(),
 
-    endedAt: date('ended_at')
+    endedAt: date('ended_at'),
+
+    transactionType: text(
+      'transaction_type'
+    )
+      .$type<
+        'INCOME'
+        | 'EXPENSE'
+      >()
+      .notNull(),
   }
 );

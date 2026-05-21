@@ -20,6 +20,10 @@ import {
   auth,
 } from '@clerk/nextjs/server';
 
+import {
+  createRecurrence,
+} from '@/services/create-recurrence-service';
+
 export async function GET() {
 
   const result =
@@ -168,9 +172,54 @@ export async function POST(
     isRecurring
   ) {
 
+    await createRecurrence({
+
+      userId,
+
+      categoryId:
+        formData.get(
+          'categoryId'
+        ) as string,
+
+      paymentMethodId:
+        formData.get(
+          'paymentMethodId'
+        ) as string,
+
+      description:
+        formData.get(
+          'description'
+        ) as string,
+
+      amount:
+        formData.get(
+          'amount'
+        ) as string,
+
+      frequency:
+        formData.get(
+          'frequency'
+        ) as
+          | 'DAILY'
+          | 'WEEKLY'
+          | 'BIWEEKLY'
+          | 'MONTHLY'
+          | 'YEARLY',
+
+      transactionType:
+        formData.get(
+          'transactionType'
+        ) as
+          | 'INCOME'
+          | 'EXPENSE',
+
+      nextOccurrence:
+        dueDate,
+    });
+
     return Response.redirect(
       new URL(
-        '/transactions/new',
+        '/recurring-transactions',
         request.url
       )
     );
@@ -190,9 +239,17 @@ export async function POST(
       ) as string,
 
     categoryId:
+    (
       formData.get(
-        'categoryId'
-      ) as string,
+        'subcategoryId'
+      )
+
+      ||
+
+      formData.get(
+        'mainCategoryId'
+      )
+    ) as string,
 
     description:
       formData.get(

@@ -22,6 +22,13 @@
       "when": 1779377141371,
       "tag": "0002_wakeful_tarot",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1779386229974,
+      "tag": "0003_fair_odin",
+      "breakpoints": true
     }
   ]
 }

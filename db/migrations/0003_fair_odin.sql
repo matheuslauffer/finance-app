@@ -1,0 +1,1 @@
+ALTER TABLE "recurrences" ADD COLUMN "transaction_type" text NOT NULL;

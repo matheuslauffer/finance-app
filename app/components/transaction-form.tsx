@@ -432,6 +432,9 @@ TransactionForm({
               </label>
 
               <select
+
+                name="mainCategoryId"
+                
                 value={
                   selectedMainCategoryId
                 }
@@ -489,13 +492,12 @@ TransactionForm({
               </label>
 
               <select
-                name="categoryId"
+                name="subcategoryId"
 
-                required
+                defaultValue=""
 
-                defaultValue={
-                  initialData
-                    ?.categoryId
+                required={
+                  filteredSubcategories.length > 0
                 }
 
                 className="
@@ -508,6 +510,10 @@ TransactionForm({
                   text-zinc-900
                 "
               >
+
+                <option value="">
+                  Selecione
+                </option>
 
                 {
                   filteredSubcategories.map(

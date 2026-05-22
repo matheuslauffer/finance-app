@@ -32,6 +32,7 @@ import {
 import {
   createFinancialOperation,
 } from '@/services/financial-operation-service';
+;
 
 function
 addFrequency(
@@ -297,6 +298,18 @@ generateRecurringTransactions(
           financialMonthId:
             financialMonth.id,
 
+          categoryId:
+            recurrence.categoryId,
+
+          paymentMethodId:
+            recurrence.paymentMethodId,
+
+          description:
+            recurrence.description,
+
+          transactionType:
+            recurrence.transactionType,
+
           projectedAmount:
             recurrence.amount,
 
@@ -307,9 +320,7 @@ generateRecurringTransactions(
 
           status:
             isAutomatic
-
               ? 'FULFILLED'
-
               : 'PROJECTED',
         })
 

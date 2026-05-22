@@ -36,6 +36,13 @@
       "when": 1779402089211,
       "tag": "0004_premium_agent_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1779408833249,
+      "tag": "0005_simple_sphinx",
+      "breakpoints": true
     }
   ]
 }

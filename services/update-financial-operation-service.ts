@@ -5,6 +5,10 @@ import {
 } from '@/db/schema/transactions';
 
 import {
+  financialMonths,
+} from '@/db/schema/financial-months';
+
+import {
   eq,
 } from 'drizzle-orm';
 
@@ -55,6 +59,10 @@ updateFinancialOperation({
   effectiveDate,
 }: Input) {
 
+  /*
+  CURRENT TRANSACTION
+  */
+
   const [current] =
     await db
 
@@ -79,6 +87,43 @@ updateFinancialOperation({
     );
   }
 
+  /*
+  CURRENT FINANCIAL MONTH
+  */
+
+  const [currentFinancialMonth] =
+    await db
+
+      .select()
+
+      .from(financialMonths)
+
+      .where(
+        eq(
+          financialMonths.id,
+          current.financialMonthId
+        )
+      );
+
+  /*
+  BLOCK CLOSED MONTH
+  */
+
+  if (
+    currentFinancialMonth
+    ?.status
+    === 'CLOSED'
+  ) {
+
+    throw new Error(
+      'Financial month is closed'
+    );
+  }
+
+  /*
+  NEW MONTH
+  */
+
   const occurredAt =
     new Date(
       effectiveDate
@@ -93,6 +138,10 @@ updateFinancialOperation({
 
       occurredAt
     );
+
+  /*
+  UPDATE TRANSACTION
+  */
 
   const [updated] =
     await db
@@ -131,9 +180,17 @@ updateFinancialOperation({
 
       .returning();
 
+  /*
+  RECALCULATE OLD MONTH
+  */
+
   await recalculateFinancialMonth(
     current.financialMonthId
   );
+
+  /*
+  RECALCULATE NEW MONTH
+  */
 
   if (
     current.financialMonthId

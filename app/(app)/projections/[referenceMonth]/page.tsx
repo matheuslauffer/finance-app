@@ -6,9 +6,16 @@ import {
   redirect,
 } from 'next/navigation';
 
+import Link from 'next/link';
+
 import {
   getProjectionMonth,
 } from '@/services/projection-service';
+
+import {
+  getPreviousReferenceMonth,
+  getNextReferenceMonth,
+} from '@/lib/reference-month-navigation';
 
 type Props = {
 
@@ -68,6 +75,16 @@ ProjectionMonthPage({
     realizedTransactions,
   } = projection;
 
+  const previousMonth =
+    getPreviousReferenceMonth(
+      referenceMonth
+    );
+
+  const nextMonth =
+    getNextReferenceMonth(
+      referenceMonth
+    );
+
   return (
 
     <main className="
@@ -77,24 +94,132 @@ ProjectionMonthPage({
       space-y-8
     ">
 
-      <div>
+      {/* HEADER */}
 
-        <h1 className="
-          text-4xl
-          font-bold
-          text-zinc-900
-        ">
-          Projeção {referenceMonth}
-        </h1>
+      <div className="
+        flex
+        flex-col
+        gap-4
+      ">
 
-        <p className="
-          text-zinc-500
-          mt-2
+        <div className="
+          flex
+          items-center
+          justify-between
+          flex-wrap
+          gap-4
         ">
-          Visão financeira projetada
-        </p>
+
+          <div>
+
+            <h1 className="
+              text-4xl
+              font-bold
+              text-zinc-900
+            ">
+              Projeção {referenceMonth}
+            </h1>
+
+            <p className="
+              text-zinc-500
+              mt-2
+            ">
+              Visão financeira projetada
+            </p>
+
+          </div>
+
+          <span
+            className={`
+              inline-flex
+              items-center
+              px-4
+              py-2
+              rounded-full
+              text-xs
+              font-bold
+
+              ${
+                financialMonth.status
+                === 'CLOSED'
+
+                  ? `
+                    bg-zinc-900
+                    text-white
+                  `
+
+                  : financialMonth.status
+                  === 'OPEN'
+
+                    ? `
+                      bg-emerald-100
+                      text-emerald-700
+                    `
+
+                    : `
+                      bg-amber-100
+                      text-amber-700
+                    `
+              }
+            `}
+          >
+            {financialMonth.status}
+          </span>
+
+        </div>
+
+        {/* NAVIGATION */}
+
+        <div className="
+          flex
+          items-center
+          gap-3
+          flex-wrap
+        ">
+
+          <Link
+            href={`/projections/${previousMonth}`}
+
+            className="
+              px-4
+              py-2
+              rounded-2xl
+              border
+              border-zinc-300
+              bg-white
+              hover:bg-zinc-50
+              transition
+              text-sm
+              font-medium
+            "
+          >
+            ← {previousMonth}
+          </Link>
+
+          <Link
+            href={`/projections/${nextMonth}`}
+
+            className="
+              px-4
+              py-2
+              rounded-2xl
+              border
+              border-zinc-300
+              bg-white
+              hover:bg-zinc-50
+              transition
+              text-sm
+              font-medium
+            "
+          >
+            {nextMonth} →
+          </Link>
+
+        </div>
 
       </div>
+
+      {/* SUMMARY */}
 
       <div className="
         grid
@@ -233,12 +358,16 @@ ProjectionMonthPage({
 
       </div>
 
+      {/* CONTENT */}
+
       <div className="
         grid
         grid-cols-1
         lg:grid-cols-2
         gap-6
       ">
+
+        {/* RECURRENCES */}
 
         <div className="
           bg-white
@@ -282,8 +411,23 @@ ProjectionMonthPage({
 
                       <p className="
                         font-medium
+                        flex
+                        items-center
+                        gap-2
                       ">
-                        {item.status}
+
+                        <span>
+                          {item.description}
+                        </span>
+
+                        <span>
+                          {
+                            item.status === 'FULFILLED'
+                              ? '✅'
+                              : '🕒'
+                          }
+                        </span>
+
                       </p>
 
                       <p className="
@@ -315,6 +459,8 @@ ProjectionMonthPage({
           </div>
 
         </div>
+
+        {/* REALIZED */}
 
         <div className="
           bg-white

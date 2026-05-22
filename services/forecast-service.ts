@@ -8,14 +8,29 @@ import { forecastSnapshots }
 
 import {
   eq,
-  and,
 } from 'drizzle-orm';
 
 export async function
 recalculateForecast(
-  userId: string,
-  financialMonthId: string
+  financialMonth: {
+    id: string;
+
+    userId: string
+
+    status:
+      | 'FORECAST'
+      | 'OPEN'
+      | 'CLOSED';
+  }
 ) {
+
+  if (
+    financialMonth.status
+    === 'CLOSED'
+  ) {
+
+    return;
+  }
 
   // 1. Load transactions
 
@@ -24,17 +39,12 @@ recalculateForecast(
       .select()
       .from(transactions)
       .where(
-        and(
-          eq(
-            transactions.userId,
-            userId
-          ),
-
+        
           eq(
             transactions.financialMonthId,
-            financialMonthId
+            financialMonth.id
           )
-        )
+        
       );
 
   // 2. Aggregate
@@ -86,9 +96,11 @@ recalculateForecast(
     await db
       .insert(forecastSnapshots)
       .values({
-        userId,
+        userId:
+          financialMonth.userId,
 
-        financialMonthId,
+        financialMonthId:
+          financialMonth.id,
 
         projectedIncome:
           projectedIncome.toString(),

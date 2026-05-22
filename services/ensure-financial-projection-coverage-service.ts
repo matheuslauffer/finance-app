@@ -25,6 +25,7 @@ import {
   isAutomaticPaymentMethod,
 } from '@/lib/payment-method-behavior';
 
+
 type Input = {
 
   userId: string;
@@ -197,6 +198,27 @@ ensureFinancialProjectionCoverage({
     untilReferenceMonth
   ) {
 
+    const currentMonth =
+        new Date()
+
+            .toISOString()
+
+            .slice(0, 7);
+
+        if (
+        currentReferenceMonth
+        <
+        currentMonth
+        ) {
+
+        currentReferenceMonth =
+            addMonth(
+            currentReferenceMonth
+            );
+
+        continue;
+        }
+
     /*
     FINANCIAL MONTH
     */
@@ -348,6 +370,13 @@ ensureFinancialProjectionCoverage({
         );
 
       /*
+      DUE DATE
+      */
+
+      const dueDate =
+        `${currentReferenceMonth}-01`;
+
+      /*
       CREATE SNAPSHOT
       */
 
@@ -365,17 +394,26 @@ ensureFinancialProjectionCoverage({
           financialMonthId:
             financialMonth.id,
 
+          categoryId:
+            recurrence.categoryId,
+
+          paymentMethodId:
+            recurrence.paymentMethodId,
+
+          description:
+            recurrence.description,
+
+          transactionType:
+            recurrence.transactionType,
+
           projectedAmount:
             recurrence.amount,
 
-          dueDate:
-            recurrence.nextOccurrence,
+          dueDate,
 
           status:
             isAutomatic
-
               ? 'FULFILLED'
-
               : 'PROJECTED',
         });
     }

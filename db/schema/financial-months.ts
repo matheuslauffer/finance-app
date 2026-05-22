@@ -52,5 +52,18 @@ export const financialMonths =
             )
               .notNull()
               .default('0'),
+
+          status: text('status', {
+
+            enum: [
+              'FORECAST',
+              'OPEN',
+              'CLOSED',
+            ],
+          })
+
+          .notNull()
+
+          .default('FORECAST'),
       }
   );

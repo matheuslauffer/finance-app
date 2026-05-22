@@ -16,6 +16,14 @@ import {
   financialMonths,
 } from './financial-months';
 
+import {
+  categories,
+} from './categories';
+
+import {
+  paymentMethods,
+} from './payment-methods';
+
 export const
 recurringTransactions =
   pgTable(
@@ -52,6 +60,45 @@ recurringTransactions =
           )
 
           .notNull(),
+
+      categoryId: uuid(
+        'category_id'
+      )
+
+        .notNull()
+
+        .references(
+          () => categories.id
+        ),
+
+      paymentMethodId: uuid(
+        'payment_method_id'
+      )
+
+        .notNull()
+
+        .references(
+          () => paymentMethods.id
+        ),
+
+      description: text(
+        'description'
+      )
+
+        .notNull(),
+
+      transactionType: text(
+        'transaction_type',
+        {
+
+          enum: [
+            'INCOME',
+            'EXPENSE',
+          ],
+        }
+      )
+
+        .notNull(),
 
       /*
       SNAPSHOT VALUE
@@ -105,6 +152,8 @@ recurringTransactions =
           .defaultNow()
 
           .notNull(),
+
+      
     },
 
     (table) => [

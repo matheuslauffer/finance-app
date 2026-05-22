@@ -40,6 +40,10 @@ import {
   ensureFinancialProjectionCoverage,
 } from './ensure-financial-projection-coverage-service';
 
+import {
+  reconcileRecurringTransaction,
+} from './reconcile-recurring-transaction-service';
+
 export async function
 createFinancialOperation(
   input: CreateFinancialOperationInput,
@@ -73,13 +77,12 @@ createFinancialOperation(
 
             totalAmount:
               input.amount,
-              
           })
 
           .returning();
 
       /*
-      2. SIMPLE TRANSACTION
+      2. RESOLVE FINANCIAL MONTH
       */
 
       const financialMonth =
@@ -91,6 +94,20 @@ createFinancialOperation(
 
           input.occurredAt
         );
+
+        if (
+          financialMonth.status
+          === 'CLOSED'
+        ) {
+
+          throw new Error(
+            'Financial month is closed'
+          );
+        }
+
+      /*
+      3. SIMPLE TRANSACTION
+      */
 
       if (
         !input.installmentCount
@@ -146,19 +163,43 @@ createFinancialOperation(
 
             .returning();
 
+        /*
+        RECONCILE RECURRING
+        */
+
+        await reconcileRecurringTransaction({
+
+          transactionId:
+            transaction.id,
+
+          financialMonthId:
+            financialMonth.id,
+
+          categoryId:
+            input.categoryId,
+
+          amount:
+            input.amount,
+        });
+
+        /*
+        RECALCULATE FORECAST
+        */
+
         await recalculateForecast(
-          input.userId,
-          financialMonth.id
+          financialMonth
         );
 
         return {
+
           operation,
+
           transaction,
         };
       }
 
       /*
-      3. INSTALLMENT FLOW
+      4. INSTALLMENT FLOW
       */
 
       const installmentAmount =
@@ -183,7 +224,7 @@ createFinancialOperation(
         );
 
       /*
-      4. CREATE INSTALLMENT PLAN
+      5. CREATE INSTALLMENT PLAN
       */
 
       const [installmentPlan] =
@@ -224,7 +265,7 @@ createFinancialOperation(
       const createdTransactions = [];
 
       /*
-      5. CREATE INSTALLMENTS
+      6. CREATE INSTALLMENTS
       */
 
       let lastInstallmentDate:
@@ -303,6 +344,29 @@ createFinancialOperation(
 
             .returning();
 
+        /*
+        RECONCILE RECURRING
+        */
+
+        await reconcileRecurringTransaction({
+
+          transactionId:
+            transaction.id,
+
+          financialMonthId:
+            installmentFinancialMonth.id,
+
+          categoryId:
+            input.categoryId,
+
+          amount:
+            installmentAmount.toString(),
+        });
+
+        /*
+        CREATE INSTALLMENT RECORD
+        */
+
         await tx
 
           .insert(
@@ -337,32 +401,39 @@ createFinancialOperation(
           transaction
         );
 
+        /*
+        RECALCULATE FORECAST
+        */
+
         await recalculateForecast(
-          input.userId,
-          installmentFinancialMonth.id
+          installmentFinancialMonth
         );
       }
 
+      /*
+      7. ENSURE PROJECTION COVERAGE
+      */
+
       if (
+        lastInstallmentDate
+      ) {
+
+        const lastReferenceMonth =
           lastInstallmentDate
-        ) {
 
-          const lastReferenceMonth =
-            lastInstallmentDate
+            .toISOString()
 
-              .toISOString()
+            .slice(0, 7);
 
-              .slice(0, 7);
+        await ensureFinancialProjectionCoverage({
 
-          await ensureFinancialProjectionCoverage({
+          userId:
+            input.userId,
 
-            userId:
-              input.userId,
-
-            untilReferenceMonth:
-              lastReferenceMonth,
-          });
-        }
+          untilReferenceMonth:
+            lastReferenceMonth,
+        });
+      }
 
       return {
 

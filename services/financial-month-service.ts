@@ -17,6 +17,11 @@ import {
   getReferenceMonth,
 } from '@/lib/reference-month';
 
+import {
+  resolveFinancialMonthStatus,
+} from '@/lib/financial-month-status';
+
+
 export async function
 resolveFinancialMonth(
 
@@ -160,6 +165,11 @@ resolveFinancialMonth(
 
         committedAmount:
           '0',
+
+        status:
+          resolveFinancialMonthStatus(
+            referenceMonth
+          ),
       })
 
       .returning();

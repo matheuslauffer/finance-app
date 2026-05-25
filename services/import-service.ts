@@ -354,6 +354,12 @@ importTransactions(
         row.transactionDate
       );
 
+    const financialDate =
+      new Date(
+        row.dueDate
+        ?? row.transactionDate
+      );
+
     const financialMonth =
       await resolveFinancialMonth(
 
@@ -361,7 +367,7 @@ importTransactions(
 
         paymentMethod.id,
 
-        occurredAt
+        financialDate
       );
 
     /*
@@ -566,8 +572,8 @@ importTransactions(
               row.installmentNumber,
 
             dueDate:
-              row.dueDate
-              ?? row.transactionDate,
+              String(row.dueDate)
+              ?? String(row.dueDate),
 
             amount:
               String(

@@ -112,7 +112,7 @@ normalizeSpreadsheetRows(
       installmentAmount:
         Number(
           row[
-            'Valor Parcela'
+            'Valor da Parcela'
           ] ?? 0
         ),
 

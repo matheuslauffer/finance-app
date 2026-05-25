@@ -25,6 +25,9 @@ import {
   isAutomaticPaymentMethod,
 } from '@/lib/payment-method-behavior';
 
+import {
+  recalculateFinancialMonth,
+} from './recalculate-financial-month';
 
 type Input = {
 
@@ -198,27 +201,6 @@ ensureFinancialProjectionCoverage({
     untilReferenceMonth
   ) {
 
-    const currentMonth =
-        new Date()
-
-            .toISOString()
-
-            .slice(0, 7);
-
-        if (
-        currentReferenceMonth
-        <
-        currentMonth
-        ) {
-
-        currentReferenceMonth =
-            addMonth(
-            currentReferenceMonth
-            );
-
-        continue;
-        }
-
     /*
     FINANCIAL MONTH
     */
@@ -276,6 +258,35 @@ ensureFinancialProjectionCoverage({
 
       financialMonth =
         createdMonth;
+    }
+
+    /*
+    SKIP PAST MONTHS
+    */
+
+    const currentMonth =
+      new Date()
+
+        .toISOString()
+
+        .slice(0, 7);
+
+    if (
+      currentReferenceMonth
+      <
+      currentMonth
+    ) {
+
+      await recalculateFinancialMonth(
+        financialMonth.id
+      );
+
+      currentReferenceMonth =
+        addMonth(
+          currentReferenceMonth
+        );
+
+      continue;
     }
 
     /*
@@ -417,6 +428,14 @@ ensureFinancialProjectionCoverage({
               : 'PROJECTED',
         });
     }
+
+    /*
+    RECALCULATE MONTH
+    */
+
+    await recalculateFinancialMonth(
+      financialMonth.id
+    );
 
     /*
     NEXT MONTH

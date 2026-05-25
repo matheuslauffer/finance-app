@@ -16,7 +16,8 @@ export type CreateFinancialOperationInput =
     | 'PURCHASE'
     | 'PIX_CREDIT'
     | 'BOLETO_CREDIT'
-    | 'INSTALLMENT_PURCHASE';
+    | 'INSTALLMENT_PURCHASE'
+    | 'SIMPLE';
 
   transactionType:
     | 'INCOME'

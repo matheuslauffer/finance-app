@@ -8,7 +8,7 @@ import {
 
 import {
   payRecurringTransaction,
-} from '@/services/pay-recurring-transaction-service';
+} from '../../../../services/pay-recurring-transaction-service';
 
 export async function
 POST(
@@ -33,28 +33,19 @@ POST(
     );
   }
 
-  const formData =
-    await request.formData();
-
-  const recurringTransactionId =
-    formData.get(
-      'recurringTransactionId'
-    ) as string;
+  const body =
+    await request.json();
 
   await payRecurringTransaction({
 
     userId:
       session.userId,
 
-    recurringTransactionId,
+    recurringTransactionId:
+      body.recurringTransactionId,
   });
 
-  return NextResponse.redirect(
-    new URL(
-      request.headers.get('referer')
-      ?? '/dashboard',
-
-      request.url
-    )
-  );
+  return NextResponse.json({
+    success: true,
+  });
 }

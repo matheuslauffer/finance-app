@@ -15,6 +15,8 @@ import {
 import {
   and,
   eq,
+  desc,
+  asc,
 } from 'drizzle-orm';
 
 type Input = {
@@ -22,76 +24,129 @@ type Input = {
   userId: string;
 
   referenceMonth: string;
+
+  recurringPage: number;
+
+  transactionsPage: number;
 };
 
 export async function
 getProjectionMonth({
   userId,
   referenceMonth,
+  recurringPage,
+  transactionsPage,
 }: Input) {
-    const [financialMonth] =
-        await db
 
-            .select()
+  const [financialMonth] =
+    await db
 
-            .from(financialMonths)
+      .select()
 
-            .where(
-                and(
+      .from(financialMonths)
 
-                    eq(
-                    financialMonths.userId,
-                    userId
-                    ),
+      .where(
+        and(
 
-                    eq(
-                    financialMonths.referenceMonth,
-                    referenceMonth
-                    )
-                )
-            );
-    
-    if (!financialMonth) {
+          eq(
+            financialMonths.userId,
+            userId
+          ),
 
-        return null;
-    }
+          eq(
+            financialMonths.referenceMonth,
+            referenceMonth
+          )
+        )
+      );
 
-    const recurringSnapshots =
-        await db
+  if (!financialMonth) {
 
-            .select()
+    return null;
+  }
 
-            .from(recurringTransactions)
+  /*
+  RECURRING SNAPSHOTS
+  */
 
-            .where(
-                eq(
-                    recurringTransactions
-                    .financialMonthId,
+  const recurringResult =
+    await db
 
-                    financialMonth.id
-                )
-            );
+      .select()
 
-    const realizedTransactions =
-        await db
+      .from(recurringTransactions)
 
-            .select()
+      .where(
+        eq(
+          recurringTransactions.financialMonthId,
+          financialMonth.id
+        )
+      )
 
-            .from(transactions)
+      .orderBy(
+        asc(
+          recurringTransactions.dueDate
+        )
+      )
 
-            .where(
-                eq(
-                    transactions.financialMonthId,
-                    financialMonth.id
-                )
-            );
+      .limit(6)
 
-    return {
+      .offset(
+        (recurringPage - 1) * 5
+      );
 
-        financialMonth,
+  const hasMoreRecurring =
+    recurringResult.length > 5;
 
-        recurringSnapshots,
+  const recurringSnapshots =
+    recurringResult.slice(0, 5);
 
-        realizedTransactions,
-    };
+  /*
+  REALIZED TRANSACTIONS
+  */
+
+  const transactionsResult =
+    await db
+
+      .select()
+
+      .from(transactions)
+
+      .where(
+        eq(
+          transactions.financialMonthId,
+          financialMonth.id
+        )
+      )
+
+      .orderBy(
+        desc(
+          transactions.effectiveDate
+        )
+      )
+
+      .limit(6)
+
+      .offset(
+        (transactionsPage - 1) * 5
+      );
+
+  const hasMoreTransactions =
+    transactionsResult.length > 5;
+
+  const realizedTransactions =
+    transactionsResult.slice(0, 5);
+
+  return {
+
+    financialMonth,
+
+    recurringSnapshots,
+
+    realizedTransactions,
+
+    hasMoreRecurring,
+
+    hasMoreTransactions,
+  };
 }

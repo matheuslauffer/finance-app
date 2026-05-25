@@ -43,6 +43,13 @@
       "when": 1779408833249,
       "tag": "0005_simple_sphinx",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1779410721677,
+      "tag": "0006_chunky_mad_thinker",
+      "breakpoints": true
     }
   ]
 }

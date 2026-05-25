@@ -17,16 +17,28 @@ import {
   getNextReferenceMonth,
 } from '@/lib/reference-month-navigation';
 
+import {
+  formatCurrency,
+} from '@/lib/currency';
+
 type Props = {
 
   params: Promise<{
     referenceMonth: string;
+  }>;
+
+  searchParams: Promise<{
+
+    recurringPage?: string;
+
+    transactionsPage?: string;
   }>;
 };
 
 export default async function
 ProjectionMonthPage({
   params,
+  searchParams,
 }: Props) {
 
   const session =
@@ -41,8 +53,25 @@ ProjectionMonthPage({
     referenceMonth,
   } = await params;
 
+  const {
+    recurringPage,
+    transactionsPage,
+  } = await searchParams;
+
+  const recurringCurrentPage =
+    Number(recurringPage || '1');
+
+  const transactionsCurrentPage =
+    Number(transactionsPage || '1');
+
   const projection =
     await getProjectionMonth({
+
+      recurringPage:
+        recurringCurrentPage,
+
+      transactionsPage:
+        transactionsCurrentPage,
 
       userId:
         session.userId,
@@ -73,6 +102,8 @@ ProjectionMonthPage({
     financialMonth,
     recurringSnapshots,
     realizedTransactions,
+    hasMoreRecurring,
+    hasMoreTransactions,
   } = projection;
 
   const previousMonth =
@@ -181,39 +212,43 @@ ProjectionMonthPage({
             href={`/projections/${previousMonth}`}
 
             className="
-              px-4
-              py-2
-              rounded-2xl
-              border
-              border-zinc-300
-              bg-white
-              hover:bg-zinc-50
-              transition
-              text-sm
-              font-medium
+                px-4
+                py-2
+                rounded-2xl
+                border
+                border-zinc-300
+                bg-white
+                hover:bg-zinc-50
+                transition
+                text-sm
+                font-medium
+                text-zinc-800
+                hover:text-zinc-950
             "
-          >
+            >
             ← {previousMonth}
-          </Link>
+            </Link>
 
-          <Link
+            <Link
             href={`/projections/${nextMonth}`}
 
             className="
-              px-4
-              py-2
-              rounded-2xl
-              border
-              border-zinc-300
-              bg-white
-              hover:bg-zinc-50
-              transition
-              text-sm
-              font-medium
+                px-4
+                py-2
+                rounded-2xl
+                border
+                border-zinc-300
+                bg-white
+                hover:bg-zinc-50
+                transition
+                text-sm
+                font-medium
+                text-zinc-800
+                hover:text-zinc-950
             "
-          >
+            >
             {nextMonth} →
-          </Link>
+            </Link>
 
         </div>
 
@@ -249,11 +284,11 @@ ProjectionMonthPage({
             mt-2
             text-emerald-600
           ">
-            R$ {
-              Number(
-                financialMonth.projectedIncome
-              ).toLocaleString(
-                'pt-BR'
+            {
+              formatCurrency(
+                Number(
+                  financialMonth.projectedIncome
+                )
               )
             }
           </h2>
@@ -281,11 +316,11 @@ ProjectionMonthPage({
             mt-2
             text-red-600
           ">
-            R$ {
-              Number(
-                financialMonth.projectedExpense
-              ).toLocaleString(
-                'pt-BR'
+            {
+              formatCurrency(
+                Number(
+                  financialMonth.projectedExpense
+                )
               )
             }
           </h2>
@@ -313,11 +348,11 @@ ProjectionMonthPage({
             mt-2
             text-zinc-900
           ">
-            R$ {
-              Number(
-                financialMonth.projectedBalance
-              ).toLocaleString(
-                'pt-BR'
+            {
+              formatCurrency(
+                Number(
+                  financialMonth.projectedBalance
+                )
               )
             }
           </h2>
@@ -345,11 +380,11 @@ ProjectionMonthPage({
             mt-2
             text-amber-600
           ">
-            R$ {
-              Number(
-                financialMonth.committedAmount
-              ).toLocaleString(
-                'pt-BR'
+            {
+              formatCurrency(
+                Number(
+                  financialMonth.committedAmount
+                )
               )
             }
           </h2>
@@ -381,12 +416,16 @@ ProjectionMonthPage({
             text-xl
             font-bold
             mb-4
+            text-zinc-900
           ">
             Recorrências
           </h2>
 
           <div className="
             space-y-3
+            max-h-[600px]
+            overflow-y-auto
+            pr-2
           ">
 
             {
@@ -401,9 +440,10 @@ ProjectionMonthPage({
                       items-center
                       justify-between
                       border
-                      border-zinc-100
+                      border-zinc-200
                       rounded-2xl
                       p-4
+                      bg-white
                     "
                   >
 
@@ -411,6 +451,7 @@ ProjectionMonthPage({
 
                       <p className="
                         font-medium
+                        text-zinc-800
                         flex
                         items-center
                         gap-2
@@ -433,20 +474,74 @@ ProjectionMonthPage({
                       <p className="
                         text-sm
                         text-zinc-500
+                        mt-1
                       ">
                         {item.dueDate}
                       </p>
 
+                      {
+                        item.status === 'PROJECTED'
+                        &&
+                        item.transactionType === 'EXPENSE'
+                        && (
+
+                          <form
+                            action="/api/recurring-transactions/pay"
+
+                            method="POST"
+
+                            className="mt-3"
+                          >
+
+                            <input
+                              type="hidden"
+
+                              name="recurringTransactionId"
+
+                              value={item.id}
+                            />
+
+                            <button
+                              type="submit"
+
+                              className="
+                                px-4
+                                py-2
+                                rounded-xl
+                                bg-zinc-900
+                                text-white
+                                text-sm
+                                font-medium
+                                hover:bg-zinc-800
+                                transition
+                              "
+                            >
+                              Pagar
+                            </button>
+
+                          </form>
+                        )
+                      }
+
                     </div>
 
-                    <p className="
-                      font-bold
-                    ">
-                      R$ {
-                        Number(
-                          item.projectedAmount
-                        ).toLocaleString(
-                          'pt-BR'
+                    <p
+                      className={`
+                        font-bold
+                        text-lg
+
+                        ${
+                          item.transactionType === 'INCOME'
+                            ? 'text-emerald-600'
+                            : 'text-red-600'
+                        }
+                      `}
+                    >
+                      {
+                        formatCurrency(
+                          Number(
+                            item.projectedAmount
+                          )
                         )
                       }
                     </p>
@@ -457,6 +552,82 @@ ProjectionMonthPage({
             }
 
           </div>
+
+          {
+            (
+              recurringCurrentPage > 1
+              ||
+              hasMoreRecurring
+            )
+            && (
+
+              <div className="
+                flex
+                items-center
+                justify-between
+                mt-6
+              ">
+
+                <div>
+
+                  {
+                    recurringCurrentPage > 1
+                    && (
+
+                      <Link
+                        scroll={false}
+
+                        href={`/projections/${referenceMonth}?recurringPage=${Math.max(1, recurringCurrentPage - 1)}&transactionsPage=${transactionsCurrentPage}`}
+
+                        className="
+                          text-sm
+                          font-medium
+                          text-zinc-600
+                          hover:text-zinc-900
+                        "
+                      >
+                        ← Anterior
+                      </Link>
+                    )
+                  }
+
+                </div>
+
+                <span className="
+                  text-sm
+                  text-zinc-500
+                ">
+                  Página {recurringCurrentPage}
+                </span>
+
+                <div>
+
+                  {
+                    hasMoreRecurring
+                    && (
+
+                      <Link
+                        scroll={false}
+
+                        href={`/projections/${referenceMonth}?recurringPage=${recurringCurrentPage + 1}&transactionsPage=${transactionsCurrentPage}`}
+
+                        className="
+                          text-sm
+                          font-medium
+                          text-zinc-600
+                          hover:text-zinc-900
+                        "
+                      >
+                        Próxima →
+                      </Link>
+                    )
+                  }
+
+                </div>
+
+              </div>
+            )
+          }
 
         </div>
 
@@ -474,12 +645,16 @@ ProjectionMonthPage({
             text-xl
             font-bold
             mb-4
+            text-zinc-900
           ">
             Transações Realizadas
           </h2>
 
           <div className="
             space-y-3
+            max-h-[600px]
+            overflow-y-auto
+            pr-2
           ">
 
             {
@@ -494,9 +669,10 @@ ProjectionMonthPage({
                       items-center
                       justify-between
                       border
-                      border-zinc-100
+                      border-zinc-200
                       rounded-2xl
                       p-4
+                      bg-white
                     "
                   >
 
@@ -504,6 +680,7 @@ ProjectionMonthPage({
 
                       <p className="
                         font-medium
+                        text-zinc-800
                       ">
                         {
                           transaction.description
@@ -513,6 +690,7 @@ ProjectionMonthPage({
                       <p className="
                         text-sm
                         text-zinc-500
+                        mt-1
                       ">
                         {
                           transaction.effectiveDate
@@ -521,14 +699,26 @@ ProjectionMonthPage({
 
                     </div>
 
-                    <p className="
-                      font-bold
-                    ">
-                      R$ {
-                        Number(
-                          transaction.amount
-                        ).toLocaleString(
-                          'pt-BR'
+                    <p
+                      className={`
+                        font-bold
+                        text-lg
+
+                        ${
+                          transaction.transactionType
+                          === 'INCOME'
+
+                            ? 'text-emerald-600'
+
+                            : 'text-red-600'
+                        }
+                      `}
+                    >
+                      {
+                        formatCurrency(
+                          Number(
+                            transaction.amount
+                          )
                         )
                       }
                     </p>
@@ -539,6 +729,80 @@ ProjectionMonthPage({
             }
 
           </div>
+
+          {
+            (
+              transactionsCurrentPage > 1
+              ||
+              hasMoreTransactions
+            )
+            && (
+
+              <div className="
+                flex
+                items-center
+                justify-between
+                mt-6
+              ">
+
+                <div>
+
+                  {
+                    transactionsCurrentPage > 1
+                    && (
+
+                      <Link
+                        href={`/projections/${referenceMonth}?recurringPage=${recurringCurrentPage}&transactionsPage=${Math.max(1, transactionsCurrentPage - 1)}`}
+                        scroll={false}
+
+                        className="
+                          text-sm
+                          font-medium
+                          text-zinc-600
+                          hover:text-zinc-900
+                        "
+                      >
+                        ← Anterior
+                      </Link>
+                    )
+                  }
+
+                </div>
+
+                <span className="
+                  text-sm
+                  text-zinc-500
+                ">
+                  Página {transactionsCurrentPage}
+                </span>
+
+                <div>
+
+                  {
+                    hasMoreTransactions
+                    && (
+
+                      <Link
+                      scroll={false}
+                        href={`/projections/${referenceMonth}?recurringPage=${recurringCurrentPage}&transactionsPage=${transactionsCurrentPage + 1}`}
+
+                        className="
+                          text-sm
+                          font-medium
+                          text-zinc-600
+                          hover:text-zinc-900
+                        "
+                      >
+                        Próxima →
+                      </Link>
+                    )
+                  }
+
+                </div>
+
+              </div>
+            )
+          }
 
         </div>
 

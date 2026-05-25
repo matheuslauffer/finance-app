@@ -72,6 +72,7 @@ export const operationTypeEnum = pgEnum(
     'INSTALLMENT_PURCHASE',
     'FINANCING',
     'TRANSFER',
+    'SIMPLE',
   ]
 );
 

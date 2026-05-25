@@ -5,6 +5,10 @@ import {
 } from '@/db/schema/transactions';
 
 import {
+  recurringTransactions,
+} from '@/db/schema/recurring-transactions';
+
+import {
   financialMonths,
 } from '@/db/schema/financial-months';
 
@@ -17,13 +21,42 @@ recalculateFinancialMonth(
   financialMonthId: string
 ) {
 
+  /*
+  REALIZED
+  */
+
   const monthTransactions =
     await db
+
       .select()
+
       .from(transactions)
+
       .where(
         eq(
           transactions
+            .financialMonthId,
+
+          financialMonthId
+        )
+      );
+
+  /*
+  FORECAST
+  */
+
+  const monthRecurringTransactions =
+    await db
+
+      .select()
+
+      .from(
+        recurringTransactions
+      )
+
+      .where(
+        eq(
+          recurringTransactions
             .financialMonthId,
 
           financialMonthId
@@ -34,6 +67,45 @@ recalculateFinancialMonth(
 
   let expense = 0;
 
+  let committed = 0;
+
+  /*
+  RECURRING SNAPSHOTS
+  */
+
+  for (
+    const snapshot
+    of monthRecurringTransactions
+  ) {
+
+    const amount =
+      Number(
+        snapshot.projectedAmount
+      );
+
+    if (
+      snapshot.transactionType
+      === 'INCOME'
+    ) {
+
+      income += amount;
+    }
+
+    if (
+      snapshot.transactionType
+      === 'EXPENSE'
+    ) {
+
+      expense += amount;
+
+      committed += amount;
+    }
+  }
+
+  /*
+  REALIZED TRANSACTIONS
+  */
+
   for (
     const transaction
     of monthTransactions
@@ -43,6 +115,18 @@ recalculateFinancialMonth(
       Number(
         transaction.amount
       );
+
+    /*
+    AVOID DOUBLE COUNT
+    */
+
+    if (
+      transaction
+        .recurringTransactionId
+    ) {
+
+      continue;
+    }
 
     if (
       transaction
@@ -60,6 +144,8 @@ recalculateFinancialMonth(
     ) {
 
       expense += amount;
+
+      committed += amount;
     }
   }
 
@@ -67,7 +153,9 @@ recalculateFinancialMonth(
     income - expense;
 
   await db
+
     .update(financialMonths)
+
     .set({
 
       projectedIncome:
@@ -80,7 +168,7 @@ recalculateFinancialMonth(
         String(balance),
 
       committedAmount:
-        String(expense),
+        String(committed),
     })
 
     .where(

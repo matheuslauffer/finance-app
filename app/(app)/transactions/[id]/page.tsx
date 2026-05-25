@@ -6,6 +6,10 @@ import {
   getTransactionDetails,
 } from '@/services/transaction-details-service';
 
+import{
+  formatCurrency,
+} from '@/lib/currency'
+
 type Props = {
   params: Promise<{
     id: string;
@@ -146,10 +150,12 @@ TransactionDetailsPage({
               font-bold
               text-zinc-900
             ">
-              R$ {
-                Number(
-                  transaction.amount
-                ).toFixed(2)
+              {
+                formatCurrency(
+                  Number(
+                    transaction.amount
+                  )
+                )
               }
             </p>
 
@@ -268,13 +274,15 @@ TransactionDetailsPage({
                   details
                     .installmentPlan
                     .installmentCount
-                }x de R$ {
+                }x de {
 
-                  Number(
-                    details
-                      .installmentPlan
-                      .installmentAmount
-                  ).toFixed(2)
+                  formatCurrency(
+                    Number(
+                      details
+                        .installmentPlan
+                        .installmentAmount
+                    )
+                  )
                 }
               </p>
 
@@ -341,11 +349,12 @@ TransactionDetailsPage({
                           font-bold
                           text-zinc-900
                         ">
-                          R$ {
-
-                            Number(
-                              installment.amount
-                            ).toFixed(2)
+                          {
+                            formatCurrency(
+                              Number(
+                                installment.amount
+                              )
+                            )
                           }
                         </p>
 

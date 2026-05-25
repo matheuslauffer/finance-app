@@ -1,23 +1,42 @@
-import { db } from '@/db';
+import {
+  db,
+} from '@/db';
+
+import {
+  recurrences,
+} from '@/db/schema/recurrences';
 
 import {
   recurringTransactions,
 } from '@/db/schema/recurring-transactions';
 
 import {
+  financialMonths,
+} from '@/db/schema/financial-months';
+
+import {
+  and,
   eq,
+  gte,
 } from 'drizzle-orm';
 
-type UpdateRecurringTransactionInput = {
+import {
+  generateRecurringTransactions,
+} from './generate-recurring-transactions-service';
 
-  recurringTransactionId:
-    string;
+import {
+  recalculateFinancialMonth,
+} from './recalculate-financial-month';
 
-  description:
-    string;
+type Input = {
 
-  amount:
-    string;
+  recurrenceId: string;
+
+  userId: string;
+
+  description: string;
+
+  amount: string;
 
   transactionType:
     | 'INCOME'
@@ -30,31 +49,45 @@ type UpdateRecurringTransactionInput = {
     | 'MONTHLY'
     | 'YEARLY';
 
-  categoryId:
-    string;
+  categoryId: string;
 
-  paymentMethodId:
-    string;
+  paymentMethodId: string;
 
-  effectiveFrom:
-    string;
+  nextOccurrence: string;
 
-  effectiveUntil?:
-    string;
+  endedAt:
+    string | null;
 };
 
 export async function
-updateRecurringTransaction(
+updateRecurringTransaction({
 
-  input:
-    UpdateRecurringTransactionInput
-) {
+  recurrenceId,
+
+  userId,
+
+  description,
+
+  amount,
+
+  transactionType,
+
+  frequency,
+
+  categoryId,
+
+  paymentMethodId,
+
+  nextOccurrence,
+
+  endedAt,
+}: Input) {
 
   /*
-  LOAD CURRENT VERSION
+  OLD SNAPSHOTS
   */
 
-  const [current] =
+  const futureSnapshots =
     await db
 
       .select()
@@ -64,97 +97,168 @@ updateRecurringTransaction(
       )
 
       .where(
-        eq(
-          recurringTransactions.id,
+        and(
 
-          input
-            .recurringTransactionId
+          eq(
+            recurringTransactions
+              .recurrenceId,
+
+            recurrenceId
+          ),
+
+          eq(
+            recurringTransactions
+              .status,
+
+            'PROJECTED'
+          ),
+
+          gte(
+            recurringTransactions
+              .dueDate,
+
+            new Date()
+              .toISOString()
+              .split('T')[0]
+          )
         )
       );
 
-  if (!current) {
+  /*
+  AFFECTED MONTHS
+  */
 
-    throw new Error(
-      'Recurring transaction not found.'
-    );
-  }
+  const affectedMonthIds =
+    [
+      ...new Set(
+
+        futureSnapshots.map(
+          (item) =>
+            item.financialMonthId
+        )
+      )
+    ];
 
   /*
-  END CURRENT VERSION
+  DELETE FUTURE SNAPSHOTS
   */
 
   await db
 
-    .update(
+    .delete(
       recurringTransactions
     )
 
-    .set({
-
-      status:
-        'ENDED',
-
-      effectiveUntil:
-        input
-          .effectiveFrom,
-    })
-
     .where(
-      eq(
-        recurringTransactions.id,
+      and(
 
-        current.id
+        eq(
+          recurringTransactions
+            .recurrenceId,
+
+          recurrenceId
+        ),
+
+        eq(
+          recurringTransactions
+            .status,
+
+          'PROJECTED'
+        ),
+
+        gte(
+          recurringTransactions
+            .dueDate,
+
+          new Date()
+            .toISOString()
+            .split('T')[0]
+        )
       )
     );
 
   /*
-  CREATE NEW VERSION
+  UPDATE RECURRENCE
   */
 
-  const [created] =
+  await db
+
+    .update(recurrences)
+
+    .set({
+
+      description,
+
+      amount,
+
+      transactionType,
+
+      frequency,
+
+      categoryId,
+
+      paymentMethodId,
+
+      nextOccurrence,
+
+      endedAt,
+    })
+
+    .where(
+      and(
+
+        eq(
+          recurrences.id,
+          recurrenceId
+        ),
+
+        eq(
+          recurrences.userId,
+          userId
+        )
+      )
+    );
+
+  /*
+  REGENERATE SNAPSHOTS
+  */
+
+  await generateRecurringTransactions(
+    recurrenceId
+  );
+
+  /*
+  RECALCULATE
+  */
+
+  for (
+    const monthId
+    of affectedMonthIds
+  ) {
+
+    await recalculateFinancialMonth(
+      monthId
+    );
+  }
+
+  /*
+  RECALCULATE NEW MONTHS
+  */
+
+  const newMonths =
     await db
 
-      .insert(
-        recurringTransactions
-      )
+      .select()
 
-      .values({
+      .from(financialMonths);
 
-        userId:
-          current.userId,
+  for (
+    const month
+    of newMonths
+  ) {
 
-        description:
-          input.description,
-
-        amount:
-          input.amount,
-
-        transactionType:
-          input.transactionType,
-
-        frequency:
-          input.frequency,
-
-        status:
-          'ACTIVE',
-
-        effectiveFrom:
-          input.effectiveFrom,
-
-        effectiveUntil:
-          input.effectiveUntil,
-
-        categoryId:
-          input.categoryId,
-
-        paymentMethodId:
-          input.paymentMethodId,
-
-        parentRecurringTransactionId:
-          current.id,
-      })
-
-      .returning();
-
-  return created;
+    await recalculateFinancialMonth(
+      month.id
+    );
+  }
 }

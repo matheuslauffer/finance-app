@@ -171,9 +171,7 @@ RecurringTransactionForm({
   return (
 
     <form
-      action="
-        /api/recurring-transactions
-      "
+      action="/api/recurring-transactions"
 
       method="POST"
 
@@ -195,9 +193,7 @@ RecurringTransactionForm({
           <input
             type="hidden"
 
-            name="
-              recurringTransactionId
-            "
+            name="recurringTransactionId"
 
             value={
               initialData.id
@@ -239,10 +235,7 @@ RecurringTransactionForm({
                 ?.description
             }
 
-            placeholder="
-              Ex: Aluguel,
-              psicoterapia...
-            "
+            placeholder="Ex: Aluguel, psicoterapia..."
 
             className="
               border
@@ -289,9 +282,7 @@ RecurringTransactionForm({
               );
             }}
 
-            placeholder="
-              R$ 0,00
-            "
+            placeholder="R$ 0,00"
 
             className="
               border

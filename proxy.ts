@@ -12,6 +12,8 @@ const isProtectedRoute =
     '/dashboard(.*)',
     '/transactions(.*)',
     '/import(.*)',
+    '/projections(.*)',
+    '/api(.*)',
   ]);
 
 export default clerkMiddleware(

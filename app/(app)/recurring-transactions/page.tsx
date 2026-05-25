@@ -324,9 +324,7 @@ RecurringTransactionsPage() {
                         ">
 
                           <Link
-                            href={`
-                              /recurring-transactions/${item.id}/edit
-                            `}
+                            href={`/recurring-transactions/${item.id}/edit`}
 
                             className="
                               text-sm

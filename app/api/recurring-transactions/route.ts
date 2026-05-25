@@ -7,8 +7,12 @@ import {
 } from 'next/server';
 
 import {
-  payRecurringTransaction,
-} from '@/services/pay-recurring-transaction-service';
+  createRecurrence,
+} from '@/services/create-recurrence-service';
+
+import {
+  updateRecurringTransaction,
+} from '@/services/update-recurring-transaction-service';
 
 export async function
 POST(
@@ -39,21 +43,102 @@ POST(
   const recurringTransactionId =
     formData.get(
       'recurringTransactionId'
-    ) as string;
+    ) as string | null;
 
-  await payRecurringTransaction({
+  const payload = {
+
+    description:
+      formData.get(
+        'description'
+      ) as string,
+
+    amount:
+      formData.get(
+        'amount'
+      ) as string,
+
+    transactionType:
+      formData.get(
+        'transactionType'
+      ) as
+        | 'INCOME'
+        | 'EXPENSE',
+
+    frequency:
+      formData.get(
+        'frequency'
+      ) as
+        | 'DAILY'
+        | 'WEEKLY'
+        | 'BIWEEKLY'
+        | 'MONTHLY'
+        | 'YEARLY',
+
+    categoryId:
+      formData.get(
+        'categoryId'
+      ) as string,
+
+    paymentMethodId:
+      formData.get(
+        'paymentMethodId'
+      ) as string,
+
+    nextOccurrence:
+      formData.get(
+        'effectiveFrom'
+      ) as string,
+
+    endedAt:
+      formData.get(
+        'effectiveUntil'
+      )?.toString().trim() || null,
+  };
+
+  /*
+  UPDATE
+  */
+
+  if (
+    recurringTransactionId
+  ) {
+
+    await updateRecurringTransaction({
+
+      recurrenceId:
+        recurringTransactionId,
+
+      userId:
+        session.userId,
+
+      ...payload,
+    });
+
+    return NextResponse.redirect(
+
+      new URL(
+        '/recurring-transactions',
+        request.url
+      )
+    );
+  }
+
+  /*
+  CREATE
+  */
+
+  await createRecurrence({
 
     userId:
       session.userId,
 
-    recurringTransactionId,
+    ...payload,
   });
 
   return NextResponse.redirect(
-    new URL(
-      request.headers.get('referer')
-      ?? '/dashboard',
 
+    new URL(
+      '/recurring-transactions',
       request.url
     )
   );

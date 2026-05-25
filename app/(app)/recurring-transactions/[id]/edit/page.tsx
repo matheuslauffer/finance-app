@@ -10,9 +10,6 @@ import Link from 'next/link';
 
 import { db } from '@/db';
 
-import {
-  recurringTransactions,
-} from '@/db/schema/recurring-transactions';
 
 import {
   eq,
@@ -25,18 +22,23 @@ import {
 import {
   RecurringTransactionForm,
 } from '@/app/components/recurring-transaction-form';
+import { recurrences } from '@/db/schema/recurrences';
 
 type Props = {
 
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export default async function
 EditRecurringTransactionPage({
   params,
 }: Props) {
+
+  const {
+  id,
+} = await params;
 
   const session =
     await auth();
@@ -55,14 +57,14 @@ EditRecurringTransactionPage({
       .select()
 
       .from(
-        recurringTransactions
+        recurrences
       )
 
       .where(
         eq(
-          recurringTransactions.id,
+          recurrences.id,
 
-          params.id
+          id
         )
       );
 
@@ -116,9 +118,7 @@ EditRecurringTransactionPage({
         </div>
 
         <Link
-          href="
-            /recurring-transactions
-          "
+          href="/recurring-transactions"
 
           className="
             border
@@ -173,10 +173,10 @@ EditRecurringTransactionPage({
             recurring.paymentMethodId,
 
           effectiveFrom:
-            recurring.effectiveFrom,
+            recurring.nextOccurrence,
 
           effectiveUntil:
-            recurring.effectiveUntil,
+            recurring.endedAt,
         }}
       />
 

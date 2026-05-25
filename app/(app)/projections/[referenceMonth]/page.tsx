@@ -490,6 +490,8 @@ ProjectionMonthPage({
 
                             method="POST"
 
+                            encType="multipart/form-data"
+
                             className="mt-3"
                           >
 

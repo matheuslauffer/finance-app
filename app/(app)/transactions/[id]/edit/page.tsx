@@ -28,15 +28,19 @@ import {
 
 type Props = {
 
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export default async function
 EditTransactionPage({
   params,
 }: Props) {
+
+  const {
+    id,
+  } = await params;
 
   const session =
     await auth();
@@ -62,7 +66,7 @@ EditTransactionPage({
         eq(
           transactions.id,
 
-          params.id
+          id
         )
       );
 
@@ -139,8 +143,12 @@ EditTransactionPage({
 
       <TransactionForm
 
-        categories={
-          formData.categories
+        mainCategories={
+          formData.mainCategories
+        }
+
+        subcategories={
+          formData.subcategories
         }
 
         paymentMethods={

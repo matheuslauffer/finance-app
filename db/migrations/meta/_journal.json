@@ -50,6 +50,13 @@
       "when": 1779410721677,
       "tag": "0006_chunky_mad_thinker",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1779743703043,
+      "tag": "0007_powerful_naoko",
+      "breakpoints": true
     }
   ]
 }

@@ -8,7 +8,7 @@ import {
 
 import {
   payRecurringTransaction,
-} from '../../../../services/pay-recurring-transaction-service';
+} from '@/services/pay-recurring-transaction-service';
 
 export async function
 POST(
@@ -33,19 +33,66 @@ POST(
     );
   }
 
-  const body =
-    await request.json();
+  /*
+  FORM DATA
+  */
+
+  const formData =
+    await request.formData();
+
+  const recurringTransactionId =
+    String(
+      formData.get(
+        'recurringTransactionId'
+      )
+    );
+
+  /*
+  VALIDATION
+  */
+
+  if (
+    !recurringTransactionId
+    ||
+    recurringTransactionId === 'null'
+    ||
+    recurringTransactionId === 'undefined'
+  ) {
+
+    return NextResponse.json(
+
+      {
+        error:
+          'Recurring transaction id is required',
+      },
+
+      {
+        status: 400,
+      }
+    );
+  }
+
+  /*
+  PAY
+  */
 
   await payRecurringTransaction({
 
     userId:
       session.userId,
 
-    recurringTransactionId:
-      body.recurringTransactionId,
+    recurringTransactionId,
   });
 
-  return NextResponse.json({
-    success: true,
-  });
+  /*
+  REDIRECT BACK
+  */
+
+  return Response.redirect(
+
+    request.headers.get('referer')
+    ?? '/projections',
+
+    303
+  );
 }

@@ -18,6 +18,10 @@ import {
   createFinancialOperation,
 } from './financial-operation-service';
 
+import {
+  recalculateFinancialMonth,
+} from './recalculate-financial-month';
+
 type Input = {
 
   userId: string;
@@ -125,7 +129,9 @@ payRecurringTransaction({
       'CONFIRMED',
 
     occurredAt:
-      new Date(snapshot.dueDate),
+      new Date(
+        snapshot.dueDate
+      ),
 
     effectiveDate:
       snapshot.dueDate,
@@ -134,6 +140,37 @@ payRecurringTransaction({
       snapshot.id,
 
     dueDate:
-    snapshot.dueDate,
+      snapshot.dueDate,
   });
+
+  /*
+  MARK SNAPSHOT AS FULFILLED
+  */
+
+  await db
+
+    .update(
+      recurringTransactions
+    )
+
+    .set({
+
+      status:
+        'FULFILLED',
+    })
+
+    .where(
+      eq(
+        recurringTransactions.id,
+        snapshot.id
+      )
+    );
+
+  /*
+  RECALCULATE MONTH
+  */
+
+  await recalculateFinancialMonth(
+    snapshot.financialMonthId
+  );
 }

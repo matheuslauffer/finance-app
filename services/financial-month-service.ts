@@ -14,13 +14,12 @@ import {
 } from 'drizzle-orm';
 
 import {
-  getReferenceMonth,
-} from '@/lib/reference-month';
+  resolveFinancialReferenceMonth,
+} from '@/lib/resolve-financial-reference-month';
 
 import {
   resolveFinancialMonthStatus,
 } from '@/lib/financial-month-status';
-
 
 export async function
 resolveFinancialMonth(
@@ -60,49 +59,23 @@ resolveFinancialMonth(
   }
 
   /*
-  BASE DATE
-  */
-
-  const baseDate =
-    new Date(
-      occurredAt
-    );
-
-  /*
-  CREDIT CARD RULE
-  */
-
-  if (
-    paymentMethod.closingDay
-  ) {
-
-    const purchaseDay =
-      baseDate.getDate();
-
-    /*
-    PURCHASE AFTER CLOSING
-    */
-
-    if (
-      purchaseDay >
-      paymentMethod.closingDay
-    ) {
-
-      baseDate.setMonth(
-        baseDate.getMonth()
-        + 1
-      );
-    }
-  }
-
-  /*
   REFERENCE MONTH
   */
 
   const referenceMonth =
-    getReferenceMonth(
-      baseDate
-    );
+    resolveFinancialReferenceMonth({
+
+      occurredAt,
+
+      paymentMethodType:
+        paymentMethod.methodType,
+
+      invoiceClosingDay:
+        paymentMethod.closingDay ?? undefined,
+
+      invoiceDueDay:
+        paymentMethod.dueDay ?? undefined,
+    });
 
   /*
   FIND MONTH

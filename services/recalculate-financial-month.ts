@@ -70,13 +70,25 @@ recalculateFinancialMonth(
   let committed = 0;
 
   /*
-  RECURRING SNAPSHOTS
+  PROJECTED RECURRING
   */
 
   for (
     const snapshot
     of monthRecurringTransactions
   ) {
+
+    /*
+    ONLY PENDING PROJECTIONS
+    */
+
+    if (
+      snapshot.status
+      !== 'PROJECTED'
+    ) {
+
+      continue;
+    }
 
     const amount =
       Number(
@@ -116,21 +128,8 @@ recalculateFinancialMonth(
         transaction.amount
       );
 
-    /*
-    AVOID DOUBLE COUNT
-    */
-
     if (
-      transaction
-        .recurringTransactionId
-    ) {
-
-      continue;
-    }
-
-    if (
-      transaction
-        .transactionType
+      transaction.transactionType
       === 'INCOME'
     ) {
 
@@ -138,8 +137,7 @@ recalculateFinancialMonth(
     }
 
     if (
-      transaction
-        .transactionType
+      transaction.transactionType
       === 'EXPENSE'
     ) {
 
@@ -149,8 +147,16 @@ recalculateFinancialMonth(
     }
   }
 
+  /*
+  BALANCE
+  */
+
   const balance =
     income - expense;
+
+  /*
+  UPDATE MONTH
+  */
 
   await db
 

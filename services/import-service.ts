@@ -13,12 +13,20 @@ import {
 } from '@/db/schema/transactions';
 
 import {
-  financialMonths,
-} from '@/db/schema/financial-months';
-
-import {
   users,
 } from '@/db/schema/users';
+
+import {
+  financialOperations,
+} from '@/db/schema/financial-operations';
+
+import {
+  installmentPlans,
+} from '@/db/schema/installment-plans';
+
+import {
+  installments,
+} from '@/db/schema/installments';
 
 import {
   eq,
@@ -34,8 +42,8 @@ import {
 } from './recalculate-financial-month';
 
 import {
-  getReferenceMonth,
-} from '@/lib/reference-month';
+  resolveFinancialMonth,
+} from './financial-month-service';
 
 function
 inferPaymentMethodType(
@@ -187,8 +195,11 @@ importTransactions(
 
   const [existingUser] =
     await db
+
       .select()
+
       .from(users)
+
       .where(
         eq(
           users.id,
@@ -199,7 +210,9 @@ importTransactions(
   if (!existingUser) {
 
     await db
+
       .insert(users)
+
       .values({
 
         id: userId,
@@ -213,10 +226,25 @@ importTransactions(
   }
 
   /*
+  INSTALLMENT MAP
+  */
+
+  const installmentOperationMap =
+    new Map<string, {
+
+      operationId: string;
+
+      installmentPlanId: string;
+    }>();
+
+  /*
   IMPORT LOOP
   */
 
-  for (const row of rows) {
+  for (
+    const row
+    of rows
+  ) {
 
     /*
     CATEGORY
@@ -224,10 +252,14 @@ importTransactions(
 
     let [category] =
       await db
+
         .select()
+
         .from(categories)
+
         .where(
           and(
+
             eq(
               categories.userId,
               userId
@@ -244,7 +276,9 @@ importTransactions(
 
       const created =
         await db
+
           .insert(categories)
+
           .values({
 
             userId,
@@ -252,6 +286,7 @@ importTransactions(
             name:
               row.category,
           })
+
           .returning();
 
       category =
@@ -264,10 +299,14 @@ importTransactions(
 
     let [paymentMethod] =
       await db
+
         .select()
+
         .from(paymentMethods)
+
         .where(
           and(
+
             eq(
               paymentMethods.userId,
               userId
@@ -284,7 +323,9 @@ importTransactions(
 
       const created =
         await db
+
           .insert(paymentMethods)
+
           .values({
 
             userId,
@@ -297,6 +338,7 @@ importTransactions(
                 row.paymentMethod
               ),
           })
+
           .returning();
 
       paymentMethod =
@@ -307,97 +349,236 @@ importTransactions(
     FINANCIAL MONTH
     */
 
-    const referenceMonth =
-      getReferenceMonth(
-        new Date(row.transactionDate)
+    const occurredAt =
+      new Date(
+        row.transactionDate
       );
 
-    let [financialMonth] =
-      await db
-        .select()
-        .from(financialMonths)
-        .where(
-          and(
-            eq(
-              financialMonths.userId,
-              userId
-            ),
+    const financialMonth =
+      await resolveFinancialMonth(
 
-            eq(
-              financialMonths
-                .referenceMonth,
+        userId,
 
-              referenceMonth
-            )
-          )
+        paymentMethod.id,
+
+        occurredAt
+      );
+
+    /*
+    INSTALLMENT KEY
+    */
+
+    const installmentKey =
+      `${row.description}-${row.amount}-${row.transactionDate}`;
+
+    /*
+    INSTALLMENT FLOW
+    */
+
+    let financialOperationId:
+      string | null = null;
+
+    if (
+      row.installmentCount > 1
+    ) {
+
+      let existingInstallment =
+        installmentOperationMap.get(
+          installmentKey
         );
 
-    if (!financialMonth) {
+      /*
+      CREATE OPERATION
+      */
 
-      const created =
-        await db
-          .insert(
-            financialMonths
-          )
-          .values({
+      if (!existingInstallment) {
 
-            userId,
+        const [operation] =
+          await db
 
-            referenceMonth,
-          })
-          .returning();
+            .insert(
+              financialOperations
+            )
 
-      financialMonth =
-        created[0];
+            .values({
+
+              userId,
+
+              operationType:
+                'INSTALLMENT_PURCHASE',
+
+              description:
+                row.description,
+
+              totalAmount:
+                String(row.amount),
+            })
+
+            .returning();
+
+        const [installmentPlan] =
+          await db
+
+            .insert(
+              installmentPlans
+            )
+
+            .values({
+
+              financialOperationId:
+                operation.id,
+
+              totalAmount:
+                String(row.amount),
+
+              installmentAmount:
+                String(
+                  row.installmentAmount
+                ),
+
+              installmentCount:
+                row.installmentCount,
+
+              startMonth:
+                row.transactionDate,
+
+              endMonth:
+                row.dueDate
+                ?? row.transactionDate,
+            })
+
+            .returning();
+
+        installmentOperationMap.set(
+
+          installmentKey,
+
+          {
+
+            operationId:
+              operation.id,
+
+            installmentPlanId:
+              installmentPlan.id,
+          }
+        );
+
+        existingInstallment = {
+
+          operationId:
+            operation.id,
+
+          installmentPlanId:
+            installmentPlan.id,
+        };
+      }
+
+      financialOperationId =
+        existingInstallment.operationId;
     }
 
     /*
     TRANSACTION
     */
 
-    await db
-      .insert(transactions)
-      .values({
+    const [transaction] =
+      await db
 
-        userId,
+        .insert(transactions)
 
-        categoryId:
-          category.id,
+        .values({
 
-        paymentMethodId:
-          paymentMethod.id,
+          userId,
 
-        financialMonthId:
-          financialMonth.id,
+          financialOperationId,
 
-        description:
-          row.description,
+          categoryId:
+            category.id,
 
-        amount:
-          String(row.amount),
+          paymentMethodId:
+            paymentMethod.id,
 
-        transactionType:
-          inferTransactionType(
+          financialMonthId:
+            financialMonth.id,
 
+          description:
             row.description,
 
-            row.category
-          ),
+          amount:
+            String(
+              row.installmentAmount
+              || row.amount
+            ),
 
-        status:
-          'CONFIRMED',
+          transactionType:
+            inferTransactionType(
 
-        occurredAt:
-          new Date(
-            row.transactionDate
-          ),
+              row.description,
 
-        effectiveDate:
-          row.transactionDate,
+              row.category
+            ),
 
-        dueDate:
-          row.transactionDate,
-      });
+          status:
+            'CONFIRMED',
+
+          occurredAt,
+
+          effectiveDate:
+            row.transactionDate,
+
+          dueDate:
+            row.dueDate
+            ?? row.transactionDate,
+        })
+
+        .returning();
+
+    /*
+    INSTALLMENT
+    */
+
+    if (
+      row.installmentCount > 1
+    ) {
+
+      const installmentData =
+        installmentOperationMap.get(
+          installmentKey
+        );
+
+      if (installmentData) {
+
+        await db
+
+          .insert(
+            installments
+          )
+
+          .values({
+
+            installmentPlanId:
+              installmentData.installmentPlanId,
+
+            transactionId:
+              transaction.id,
+
+            installmentNumber:
+              row.installmentNumber,
+
+            dueDate:
+              row.dueDate
+              ?? row.transactionDate,
+
+            amount:
+              String(
+                row.installmentAmount
+              ),
+
+            status:
+              'PENDING',
+          });
+      }
+    }
 
     /*
     RECALCULATE

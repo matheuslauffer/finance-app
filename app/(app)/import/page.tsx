@@ -60,8 +60,6 @@ ImportPage() {
         worksheet
       );
 
-    console.log(json);
-
     const normalizedRows =
   normalizeSpreadsheetRows(
     json

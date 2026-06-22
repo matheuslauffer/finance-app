@@ -88,7 +88,7 @@ ProjectionMonthPage({
       ">
 
         <h1 className="
-          text-2xl
+          text-lg
           font-bold
         ">
           Mês não encontrado
@@ -115,6 +115,42 @@ ProjectionMonthPage({
     getNextReferenceMonth(
       referenceMonth
     );
+
+  function
+  getStatusLabel(
+    status: string
+  ) {
+
+    switch (status) {
+
+      case 'FULFILLED':
+        return 'Pago';
+
+      case 'CANCELLED':
+        return 'Cancelado';
+
+      default:
+        return 'Previsto';
+    }
+  }
+
+  function
+  getStatusIcon(
+    status: string
+  ) {
+
+    switch (status) {
+
+      case 'FULFILLED':
+        return '✅';
+
+      case 'CANCELLED':
+        return '❌';
+
+      default:
+        return '🕒';
+    }
+  }
 
   return (
 
@@ -148,14 +184,14 @@ ProjectionMonthPage({
               font-bold
               text-zinc-900
             ">
-              Projeção {referenceMonth}
+              Planejamento {referenceMonth}
             </h1>
 
             <p className="
               text-zinc-500
               mt-2
             ">
-              Visão financeira projetada
+              Seus compromissos e projeções financeiras
             </p>
 
           </div>
@@ -212,43 +248,43 @@ ProjectionMonthPage({
             href={`/projections/${previousMonth}`}
 
             className="
-                px-4
-                py-2
-                rounded-2xl
-                border
-                border-zinc-300
-                bg-white
-                hover:bg-zinc-50
-                transition
-                text-sm
-                font-medium
-                text-zinc-800
-                hover:text-zinc-950
+              px-4
+              py-2
+              rounded-2xl
+              border
+              border-zinc-300
+              bg-white
+              hover:bg-zinc-50
+              transition
+              text-sm
+              font-medium
+              text-zinc-800
+              hover:text-zinc-950
             "
-            >
+          >
             ← {previousMonth}
-            </Link>
+          </Link>
 
-            <Link
+          <Link
             href={`/projections/${nextMonth}`}
 
             className="
-                px-4
-                py-2
-                rounded-2xl
-                border
-                border-zinc-300
-                bg-white
-                hover:bg-zinc-50
-                transition
-                text-sm
-                font-medium
-                text-zinc-800
-                hover:text-zinc-950
+              px-4
+              py-2
+              rounded-2xl
+              border
+              border-zinc-300
+              bg-white
+              hover:bg-zinc-50
+              transition
+              text-sm
+              font-medium
+              text-zinc-800
+              hover:text-zinc-950
             "
-            >
+          >
             {nextMonth} →
-            </Link>
+          </Link>
 
         </div>
 
@@ -258,15 +294,15 @@ ProjectionMonthPage({
 
       <div className="
         grid
-        grid-cols-1
-        md:grid-cols-4
-        gap-4
+        grid-cols-2
+        lg:grid-cols-4
+        gap-3
       ">
 
         <div className="
           bg-white
           rounded-3xl
-          p-6
+          p-4
           border
           border-zinc-200
         ">
@@ -275,11 +311,11 @@ ProjectionMonthPage({
             text-sm
             text-zinc-500
           ">
-            Receita Projetada
+            Receitas Esperadas
           </p>
 
           <h2 className="
-            text-2xl
+            text-lg
             font-bold
             mt-2
             text-emerald-600
@@ -298,7 +334,7 @@ ProjectionMonthPage({
         <div className="
           bg-white
           rounded-3xl
-          p-6
+          p-4
           border
           border-zinc-200
         ">
@@ -307,11 +343,11 @@ ProjectionMonthPage({
             text-sm
             text-zinc-500
           ">
-            Despesa Projetada
+            Despesas Previstas
           </p>
 
           <h2 className="
-            text-2xl
+            text-lg
             font-bold
             mt-2
             text-red-600
@@ -330,7 +366,7 @@ ProjectionMonthPage({
         <div className="
           bg-white
           rounded-3xl
-          p-6
+          p-4
           border
           border-zinc-200
         ">
@@ -339,11 +375,11 @@ ProjectionMonthPage({
             text-sm
             text-zinc-500
           ">
-            Saldo Projetado
+            Saldo Estimado
           </p>
 
           <h2 className="
-            text-2xl
+            text-lg
             font-bold
             mt-2
             text-zinc-900
@@ -362,7 +398,7 @@ ProjectionMonthPage({
         <div className="
           bg-white
           rounded-3xl
-          p-6
+          p-4
           border
           border-zinc-200
         ">
@@ -371,11 +407,11 @@ ProjectionMonthPage({
             text-sm
             text-zinc-500
           ">
-            Comprometido
+            Já Comprometido
           </p>
 
           <h2 className="
-            text-2xl
+            text-lg
             font-bold
             mt-2
             text-amber-600
@@ -399,31 +435,42 @@ ProjectionMonthPage({
         grid
         grid-cols-1
         lg:grid-cols-2
-        gap-6
+        gap-4
       ">
 
-        {/* RECURRENCES */}
+        {/* COMMITMENTS */}
 
         <div className="
           bg-white
           rounded-3xl
           border
           border-zinc-200
-          p-6
+          p-4
         ">
 
-          <h2 className="
-            text-xl
-            font-bold
-            mb-4
-            text-zinc-900
-          ">
-            Recorrências
-          </h2>
+          <div className="mb-6">
+
+            <h2 className="
+              text-xl
+              font-bold
+              text-zinc-900
+            ">
+              Compromissos do mês
+            </h2>
+
+            <p className="
+              text-sm
+              text-zinc-500
+              mt-2
+            ">
+              Pendentes, previstos e realizados
+            </p>
+
+          </div>
 
           <div className="
             space-y-3
-            max-h-[600px]
+            max-h-[700px]
             overflow-y-auto
             pr-2
           ">
@@ -432,7 +479,9 @@ ProjectionMonthPage({
               recurringSnapshots.map(
                 (item) => (
 
-                  <div
+                  <Link
+                    href={`/recurring-transactions/${item.id}`}
+
                     key={item.id}
 
                     className="
@@ -444,40 +493,73 @@ ProjectionMonthPage({
                       rounded-2xl
                       p-4
                       bg-white
+
+                      hover:border-zinc-400
+                      hover:shadow-sm
+
+                      transition-all
+                      cursor-pointer
                     "
                   >
 
-                    <div>
+                    <div className="flex-1">
 
-                      <p className="
-                        font-medium
-                        text-zinc-800
+                      <div className="
                         flex
                         items-center
                         gap-2
                       ">
 
-                        <span>
+                        <p className="
+                          font-medium
+                          text-zinc-800
+                        ">
                           {item.description}
-                        </span>
+                        </p>
 
                         <span>
                           {
-                            item.status === 'FULFILLED'
-                              ? '✅'
-                              : '🕒'
+                            getStatusIcon(
+                              item.status
+                            )
                           }
                         </span>
 
-                      </p>
+                      </div>
 
-                      <p className="
-                        text-sm
-                        text-zinc-500
-                        mt-1
+                      <div className="
+                        flex
+                        items-center
+                        gap-2
+                        mt-2
+                        flex-wrap
                       ">
-                        {item.dueDate}
-                      </p>
+
+                        <p className="
+                          text-sm
+                          text-zinc-500
+                        ">
+                          {item.dueDate}
+                        </p>
+
+                        <span className="
+                          text-zinc-300
+                        ">
+                          •
+                        </span>
+
+                        <p className="
+                          text-sm
+                          text-zinc-500
+                        ">
+                          {
+                            getStatusLabel(
+                              item.status
+                            )
+                          }
+                        </p>
+
+                      </div>
 
                       {
                         item.status === 'PROJECTED'
@@ -492,7 +574,7 @@ ProjectionMonthPage({
 
                             encType="multipart/form-data"
 
-                            className="mt-3"
+                            className="mt-4"
                           >
 
                             <input
@@ -518,7 +600,7 @@ ProjectionMonthPage({
                                 transition
                               "
                             >
-                              Pagar
+                              Marcar como pago
                             </button>
 
                           </form>
@@ -531,10 +613,14 @@ ProjectionMonthPage({
                       className={`
                         font-bold
                         text-lg
+                        ml-4
 
                         ${
-                          item.transactionType === 'INCOME'
+                          item.transactionType
+                          === 'INCOME'
+
                             ? 'text-emerald-600'
+
                             : 'text-red-600'
                         }
                       `}
@@ -548,7 +634,7 @@ ProjectionMonthPage({
                       }
                     </p>
 
-                  </div>
+                  </Link>
                 )
               )
             }
@@ -633,28 +719,39 @@ ProjectionMonthPage({
 
         </div>
 
-        {/* REALIZED */}
+        {/* LAST PAYMENTS */}
 
         <div className="
           bg-white
           rounded-3xl
           border
           border-zinc-200
-          p-6
+          p-4
         ">
 
-          <h2 className="
-            text-xl
-            font-bold
-            mb-4
-            text-zinc-900
-          ">
-            Transações Realizadas
-          </h2>
+          <div className="mb-6">
+
+            <h2 className="
+              text-xl
+              font-bold
+              text-zinc-900
+            ">
+              Últimos pagamentos
+            </h2>
+
+            <p className="
+              text-sm
+              text-zinc-500
+              mt-2
+            ">
+              Compromissos confirmados recentemente
+            </p>
+
+          </div>
 
           <div className="
             space-y-3
-            max-h-[600px]
+            max-h-[700px]
             overflow-y-auto
             pr-2
           ">
@@ -726,85 +823,87 @@ ProjectionMonthPage({
                     </p>
 
                   </div>
+                  
                 )
               )
             }
 
-          </div>
-
-          {
-            (
-              transactionsCurrentPage > 1
-              ||
-              hasMoreTransactions
-            )
-            && (
-
-              <div className="
-                flex
-                items-center
-                justify-between
-                mt-6
-              ">
-
-                <div>
-
-                  {
+            {
+                (
                     transactionsCurrentPage > 1
-                    && (
-
-                      <Link
-                        href={`/projections/${referenceMonth}?recurringPage=${recurringCurrentPage}&transactionsPage=${Math.max(1, transactionsCurrentPage - 1)}`}
-                        scroll={false}
-
-                        className="
-                          text-sm
-                          font-medium
-                          text-zinc-600
-                          hover:text-zinc-900
-                        "
-                      >
-                        ← Anterior
-                      </Link>
-                    )
-                  }
-
-                </div>
-
-                <span className="
-                  text-sm
-                  text-zinc-500
-                ">
-                  Página {transactionsCurrentPage}
-                </span>
-
-                <div>
-
-                  {
+                    ||
                     hasMoreTransactions
-                    && (
+                )
+                && (
 
-                      <Link
-                      scroll={false}
-                        href={`/projections/${referenceMonth}?recurringPage=${recurringCurrentPage}&transactionsPage=${transactionsCurrentPage + 1}`}
+                    <div className="
+                    flex
+                    items-center
+                    justify-between
+                    mt-6
+                    ">
 
-                        className="
-                          text-sm
-                          font-medium
-                          text-zinc-600
-                          hover:text-zinc-900
-                        "
-                      >
-                        Próxima →
-                      </Link>
-                    )
-                  }
+                    <div>
 
-                </div>
+                        {
+                        transactionsCurrentPage > 1
+                        && (
 
-              </div>
-            )
-          }
+                            <Link
+                            href={`/projections/${referenceMonth}?recurringPage=${recurringCurrentPage}&transactionsPage=${Math.max(1, transactionsCurrentPage - 1)}`}
+                            scroll={false}
+
+                            className="
+                                text-sm
+                                font-medium
+                                text-zinc-600
+                                hover:text-zinc-900
+                            "
+                            >
+                            ← Anterior
+                            </Link>
+                        )
+                        }
+
+                    </div>
+
+                    <span className="
+                        text-sm
+                        text-zinc-500
+                    ">
+                        Página {transactionsCurrentPage}
+                    </span>
+
+                    <div>
+
+                        {
+                        hasMoreTransactions
+                        && (
+
+                            <Link
+                            scroll={false}
+
+                            href={`/projections/${referenceMonth}?recurringPage=${recurringCurrentPage}&transactionsPage=${transactionsCurrentPage + 1}`}
+
+                            className="
+                                text-sm
+                                font-medium
+                                text-zinc-600
+                                hover:text-zinc-900
+                            "
+                            >
+                            Próxima →
+                            </Link>
+                        )
+                        }
+
+                    </div>
+
+                    </div>
+                )
+                }
+
+          </div>
 
         </div>
 

@@ -237,6 +237,19 @@ PaymentMethodsPage() {
 
                   </button>
 
+                  <Link
+                    href={`/payment-methods/${method.id}/edit`}
+
+                    className="
+                      text-sm
+                      font-medium
+                      text-zinc-700
+                      hover:text-zinc-900
+                    "
+                  >
+                    Editar
+                  </Link>
+
                 </form>
 
               </div>

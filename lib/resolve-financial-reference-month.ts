@@ -1,7 +1,3 @@
-import {
-  addMonths,
-} from './date';
-
 type Input = {
 
   occurredAt: Date;
@@ -25,6 +21,7 @@ resolveFinancialReferenceMonth({
   occurredAt,
   paymentMethodType,
   invoiceClosingDay,
+  invoiceDueDay,
 }: Input) {
 
   /*
@@ -42,35 +39,40 @@ resolveFinancialReferenceMonth({
       .slice(0, 7);
   }
 
-  /*
-  CREDIT CARD
-  */
-
   const purchaseDay =
     occurredAt.getDate();
 
-  let referenceDate =
-    new Date(occurredAt);
+  const goesToNextInvoice =
+
+    invoiceClosingDay != null
+
+    &&
+
+    purchaseDay >= invoiceClosingDay;
 
   /*
-  PURCHASE AFTER CLOSING
-  GOES TO NEXT INVOICE
+  CREDIT CARD ALWAYS
+  AFFECTS NEXT MONTH
   */
 
-  if (
-    invoiceClosingDay
-    &&
-    purchaseDay > invoiceClosingDay
-  ) {
+  const invoiceMonthOffset =
+    goesToNextInvoice
+      ? 2
+      : 1;
 
-    referenceDate =
-      addMonths(
-        referenceDate,
-        1
-      );
-  }
+  const competencyDate =
+    new Date(
 
-  return referenceDate
+      occurredAt.getFullYear(),
+
+      occurredAt.getMonth()
+      + invoiceMonthOffset,
+
+      invoiceDueDay ?? 1
+    );
+
+
+  return competencyDate
 
     .toISOString()
 

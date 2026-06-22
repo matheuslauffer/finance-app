@@ -14,12 +14,12 @@ import {
 } from 'drizzle-orm';
 
 import {
-  resolveFinancialReferenceMonth,
-} from '@/lib/resolve-financial-reference-month';
-
-import {
   resolveFinancialMonthStatus,
 } from '@/lib/financial-month-status';
+
+import {
+  resolveFinancialReferenceMonth,
+} from '@/lib/resolve-financial-reference-month';
 
 export async function
 resolveFinancialMonth(
@@ -62,20 +62,22 @@ resolveFinancialMonth(
   REFERENCE MONTH
   */
 
-  const referenceMonth =
-    resolveFinancialReferenceMonth({
+    const referenceMonth =
+      resolveFinancialReferenceMonth({
 
-      occurredAt,
+        occurredAt,
 
-      paymentMethodType:
-        paymentMethod.methodType,
+        paymentMethodType:
+          paymentMethod.methodType,
 
-      invoiceClosingDay:
-        paymentMethod.closingDay ?? undefined,
+        invoiceClosingDay:
+          paymentMethod.closingDay
+          ?? undefined,
 
-      invoiceDueDay:
-        paymentMethod.dueDay ?? undefined,
-    });
+        invoiceDueDay:
+          paymentMethod.dueDay
+          ?? undefined,
+      });
 
   /*
   FIND MONTH

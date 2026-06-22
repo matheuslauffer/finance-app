@@ -10,7 +10,6 @@ import Link from 'next/link';
 
 import { db } from '@/db';
 
-
 import {
   eq,
 } from 'drizzle-orm';
@@ -22,7 +21,14 @@ import {
 import {
   RecurringTransactionForm,
 } from '@/app/components/recurring-transaction-form';
-import { recurrences } from '@/db/schema/recurrences';
+
+import {
+  recurrences,
+} from '@/db/schema/recurrences';
+
+import {
+  recurringTransactions,
+} from '@/db/schema/recurring-transactions';
 
 type Props = {
 
@@ -37,8 +43,8 @@ EditRecurringTransactionPage({
 }: Props) {
 
   const {
-  id,
-} = await params;
+    id,
+  } = await params;
 
   const session =
     await auth();
@@ -50,6 +56,37 @@ EditRecurringTransactionPage({
 
     redirect('/sign-in');
   }
+
+  /*
+  SNAPSHOT
+  */
+
+  const [snapshot] =
+    await db
+
+      .select()
+
+      .from(
+        recurringTransactions
+      )
+
+      .where(
+        eq(
+          recurringTransactions.id,
+          id
+        )
+      );
+
+  if (!snapshot) {
+
+    redirect(
+      '/recurring-transactions'
+    );
+  }
+
+  /*
+  RECURRENCE
+  */
 
   const [recurring] =
     await db
@@ -63,19 +100,20 @@ EditRecurringTransactionPage({
       .where(
         eq(
           recurrences.id,
-
-          id
+          snapshot.recurrenceId
         )
       );
 
-  if (
-    !recurring
-  ) {
+  if (!recurring) {
 
     redirect(
       '/recurring-transactions'
     );
   }
+
+  /*
+  FORM DATA
+  */
 
   const formData =
     await getRecurringTransactionFormData(

@@ -11,7 +11,16 @@ import {
 } from '@/db/schema/recurrences';
 
 import {
+  paymentMethods,
+} from '@/db/schema/payment-methods';
+
+import {
+  financialMonths,
+} from '@/db/schema/financial-months';
+
+import {
   eq,
+  and,
 } from 'drizzle-orm';
 
 import {
@@ -21,6 +30,10 @@ import {
 import {
   recalculateFinancialMonth,
 } from './recalculate-financial-month';
+
+import {
+  getFinancialCompetencyDate,
+} from '@/lib/payment-method-competency';
 
 type Input = {
 
@@ -83,7 +96,9 @@ payRecurringTransaction({
 
       .select()
 
-      .from(recurrences)
+      .from(
+        recurrences
+      )
 
       .where(
         eq(
@@ -96,6 +111,93 @@ payRecurringTransaction({
 
     throw new Error(
       'Recurrence not found'
+    );
+  }
+
+  /*
+  PAYMENT METHOD
+  */
+
+  const [paymentMethod] =
+    await db
+
+      .select()
+
+      .from(
+        paymentMethods
+      )
+
+      .where(
+        eq(
+          paymentMethods.id,
+          snapshot.paymentMethodId
+        )
+      );
+
+  /*
+  COMPETENCY DATE
+  */
+
+  const competencyDate =
+    getFinancialCompetencyDate({
+
+      occurredAt:
+        new Date(
+          snapshot.dueDate
+        ),
+
+      closingDay:
+        paymentMethod
+          ?.closingDay
+        ?? null,
+
+      dueDay:
+        paymentMethod
+          ?.dueDay
+        ?? null,
+    });
+
+  /*
+  REFERENCE MONTH
+  */
+
+  const referenceMonth =
+    `${competencyDate.getFullYear()}-${String(
+      competencyDate.getMonth() + 1
+    ).padStart(2, '0')}`;
+
+  /*
+  FINANCIAL MONTH
+  */
+
+  const [financialMonth] =
+    await db
+
+      .select()
+
+      .from(
+        financialMonths
+      )
+
+      .where(
+        and(
+
+          eq(
+            financialMonths.userId,
+            userId
+          ),
+
+          eq(
+            financialMonths.referenceMonth,
+            referenceMonth
+          )
+        )
+      );
+
+  if (!financialMonth) {
+
+    throw new Error(
+      'Financial month not found'
     );
   }
 
@@ -129,18 +231,20 @@ payRecurringTransaction({
       'CONFIRMED',
 
     occurredAt:
-      new Date(
-        snapshot.dueDate
-      ),
+      competencyDate,
 
     effectiveDate:
-      snapshot.dueDate,
+      competencyDate
+        .toISOString()
+        .split('T')[0],
 
     recurringTransactionId:
       snapshot.id,
 
     dueDate:
-      snapshot.dueDate,
+      competencyDate
+        .toISOString()
+        .split('T')[0],
   });
 
   /*
@@ -171,6 +275,6 @@ payRecurringTransaction({
   */
 
   await recalculateFinancialMonth(
-    snapshot.financialMonthId
+    financialMonth.id
   );
 }

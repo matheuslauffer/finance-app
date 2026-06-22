@@ -35,8 +35,6 @@ export async function POST(
   ImportPayload[] =
     await request.json();
 
-  console.log(body);
-
   await importTransactions(userId, body);
 
   return Response.json({

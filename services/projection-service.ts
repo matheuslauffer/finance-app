@@ -13,11 +13,19 @@ import {
 } from '@/db/schema/transactions';
 
 import {
+  paymentMethods,
+} from '@/db/schema/payment-methods';
+
+import {
   and,
   eq,
   desc,
   asc,
 } from 'drizzle-orm';
+
+import {
+  getFinancialCompetencyDate,
+} from '@/lib/payment-method-competency';
 
 type Input = {
 
@@ -72,9 +80,26 @@ getProjectionMonth({
   const recurringResult =
     await db
 
-      .select()
+      .select({
+
+        recurring:
+          recurringTransactions,
+
+        paymentMethod:
+          paymentMethods,
+      })
 
       .from(recurringTransactions)
+
+      .leftJoin(
+
+        paymentMethods,
+
+        eq(
+          recurringTransactions.paymentMethodId,
+          paymentMethods.id
+        )
+      )
 
       .where(
         eq(
@@ -95,11 +120,54 @@ getProjectionMonth({
         (recurringPage - 1) * 5
       );
 
-  const hasMoreRecurring =
-    recurringResult.length > 5;
-
   const recurringSnapshots =
-    recurringResult.slice(0, 5);
+    recurringResult
+
+      .map((item) => {
+
+        const competencyDate =
+          getFinancialCompetencyDate({
+
+            occurredAt:
+              new Date(
+                item.recurring.dueDate
+              ),
+
+            closingDay:
+              item.paymentMethod
+                ?.closingDay
+              ?? null,
+
+            dueDay:
+              item.paymentMethod
+                ?.dueDay
+              ?? null,
+          });
+
+        return {
+
+          ...item.recurring,
+
+          competencyDate,
+        };
+      })
+
+      .sort((a, b) => (
+
+        a.competencyDate.getTime()
+        -
+        b.competencyDate.getTime()
+      ));
+
+  const hasMoreRecurring =
+    recurringSnapshots.length > 5;
+
+  /*
+  PAGINATION
+  */
+
+  const paginatedRecurring =
+    recurringSnapshots.slice(0, 5);
 
   /*
   REALIZED TRANSACTIONS
@@ -108,9 +176,26 @@ getProjectionMonth({
   const transactionsResult =
     await db
 
-      .select()
+      .select({
+
+        transaction:
+          transactions,
+
+        paymentMethod:
+          paymentMethods,
+      })
 
       .from(transactions)
+
+      .leftJoin(
+
+        paymentMethods,
+
+        eq(
+          transactions.paymentMethodId,
+          paymentMethods.id
+        )
+      )
 
       .where(
         eq(
@@ -131,19 +216,64 @@ getProjectionMonth({
         (transactionsPage - 1) * 5
       );
 
-  const hasMoreTransactions =
-    transactionsResult.length > 5;
-
   const realizedTransactions =
-    transactionsResult.slice(0, 5);
+    transactionsResult
+
+      .map((item) => {
+
+        const competencyDate =
+          getFinancialCompetencyDate({
+
+            occurredAt:
+              new Date(
+                item.transaction.effectiveDate
+              ),
+
+            closingDay:
+              item.paymentMethod
+                ?.closingDay
+              ?? null,
+
+            dueDay:
+              item.paymentMethod
+                ?.dueDay
+              ?? null,
+          });
+
+        return {
+
+          ...item.transaction,
+
+          competencyDate,
+        };
+      })
+
+      .sort((a, b) => (
+
+        b.competencyDate.getTime()
+        -
+        a.competencyDate.getTime()
+      ));
+
+  const hasMoreTransactions =
+    realizedTransactions.length > 5;
+
+  /*
+  PAGINATION
+  */
+
+  const paginatedTransactions =
+    realizedTransactions.slice(0, 5);
 
   return {
 
     financialMonth,
 
-    recurringSnapshots,
+    recurringSnapshots:
+      paginatedRecurring,
 
-    realizedTransactions,
+    realizedTransactions:
+      paginatedTransactions,
 
     hasMoreRecurring,
 

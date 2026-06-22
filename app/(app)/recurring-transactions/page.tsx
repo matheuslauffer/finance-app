@@ -8,13 +8,20 @@ import {
 
 import Link from 'next/link';
 
-import {
-  getRecurringTransactions,
-} from '@/services/recurring-transactions-service';
+import { db } from '@/db';
 
 import {
-  GenerateRecurringTransactionsButton,
-} from '@/app/components/generate-recurring-transactions-button';
+  recurrences,
+} from '@/db/schema/recurrences';
+
+import {
+  eq,
+  desc,
+} from 'drizzle-orm';
+
+import {
+  formatCurrency,
+} from '@/lib/currency';
 
 export default async function
 RecurringTransactionsPage() {
@@ -22,18 +29,32 @@ RecurringTransactionsPage() {
   const session =
     await auth();
 
-  const userId =
-    session.userId;
-
-  if (!userId) {
+  if (!session.userId) {
 
     redirect('/sign-in');
   }
 
-  const recurring =
-    await getRecurringTransactions(
-      userId
-    );
+  const recurringList =
+    await db
+
+      .select()
+
+      .from(
+        recurrences
+      )
+
+      .where(
+        eq(
+          recurrences.userId,
+          session.userId
+        )
+      )
+
+      .orderBy(
+        desc(
+          recurrences.nextOccurrence
+        )
+      );
 
   return (
 
@@ -64,351 +85,114 @@ RecurringTransactionsPage() {
             text-zinc-500
             mt-2
           ">
-            Gerencie seus compromissos financeiros
+            Gerencie seus lançamentos recorrentes
           </p>
 
         </div>
 
-        <div className="
-          flex
-          items-start
-          gap-3
-        ">
+        <Link
+          href="/recurring-transactions/new"
 
-          <GenerateRecurringTransactionsButton />
-
-          <Link
-            href="/recurring-transactions/new"
-
-            className="
-              bg-zinc-900
-              text-white
-              px-5
-              py-3
-              rounded-2xl
-              hover:bg-zinc-800
-              transition
-              font-medium
-            "
-          >
-            Nova recorrência
-          </Link>
-
-        </div>
+          className="
+            px-5
+            py-3
+            rounded-2xl
+            bg-zinc-900
+            text-white
+            font-medium
+            hover:bg-zinc-800
+            transition
+          "
+        >
+          Nova recorrência
+        </Link>
 
       </div>
 
       <div className="
-        bg-white
-        border
-        border-zinc-200
-        rounded-3xl
-        overflow-hidden
-        shadow-sm
+        space-y-3
       ">
 
-        <table className="
-          w-full
-        ">
+        {
+          recurringList.map(
+            (item) => (
 
-          <thead className="
-            bg-zinc-50
-            border-b
-            border-zinc-200
-          ">
+              <Link
 
-            <tr>
+                key={item.id}
 
-              <th className="
-                text-left
-                p-5
-                text-sm
-                font-semibold
-                text-zinc-600
-              ">
-                Descrição
-              </th>
+                href={`/recurring-transactions/${item.id}/edit`}
 
-              <th className="
-                text-left
-                p-5
-                text-sm
-                font-semibold
-                text-zinc-600
-              ">
-                Frequência
-              </th>
+                className="
+                  block
+                  bg-white
+                  border
+                  border-zinc-200
+                  rounded-2xl
+                  p-5
 
-              <th className="
-                text-left
-                p-5
-                text-sm
-                font-semibold
-                text-zinc-600
-              ">
-                Valor
-              </th>
+                  hover:border-zinc-400
+                  hover:shadow-sm
 
-              <th className="
-                text-left
-                p-5
-                text-sm
-                font-semibold
-                text-zinc-600
-              ">
-                Status
-              </th>
+                  transition
+                "
+              >
 
-              <th className="
-                text-left
-                p-5
-                text-sm
-                font-semibold
-                text-zinc-600
-              ">
-                Próxima ocorrência
-              </th>
+                <div className="
+                  flex
+                  items-center
+                  justify-between
+                ">
 
-              <th className="
-                text-left
-                p-5
-                text-sm
-                font-semibold
-                text-zinc-600
-              ">
-                Ações
-              </th>
+                  <div>
 
-            </tr>
+                    <h2 className="
+                      font-semibold
+                      text-zinc-900
+                    ">
+                      {item.description}
+                    </h2>
 
-          </thead>
+                    <p className="
+                      text-sm
+                      text-zinc-500
+                      mt-1
+                    ">
+                      {item.frequency}
+                    </p>
 
-          <tbody>
+                  </div>
 
-            {
-              recurring.map(
-                (item) => {
+                  <p
+                    className={`
+                      font-bold
+                      text-lg
 
-                  const status =
+                      ${
+                        item.transactionType
+                        === 'INCOME'
 
-                    item.endedAt
+                          ? 'text-emerald-600'
 
-                      ? 'ENDED'
+                          : 'text-red-600'
+                      }
+                    `}
+                  >
+                    {
+                      formatCurrency(
+                        Number(
+                          item.amount
+                        )
+                      )
+                    }
+                  </p>
 
-                      : item.isActive
+                </div>
 
-                        ? 'ACTIVE'
-
-                        : 'PAUSED';
-
-                  return (
-
-                    <tr
-                      key={item.id}
-
-                      className="
-                        border-b
-                        border-zinc-100
-                        hover:bg-zinc-50
-                        transition
-                      "
-                    >
-
-                      <td className="
-                        p-5
-                        font-medium
-                        text-zinc-900
-                      ">
-                        {
-                          item.description
-                        }
-                      </td>
-
-                      <td className="
-                        p-5
-                        text-zinc-600
-                      ">
-                        {
-                          item.frequency
-                        }
-                      </td>
-
-                      <td className="
-                        p-5
-                        text-zinc-900
-                        font-semibold
-                      ">
-
-                        {
-                          Number(
-                            item.amount
-                          ).toLocaleString(
-                            'pt-BR',
-                            {
-
-                              style:
-                                'currency',
-
-                              currency:
-                                'BRL',
-                            }
-                          )
-                        }
-
-                      </td>
-
-                      <td className="
-                        p-5
-                      ">
-
-                        <span
-                          className={`
-                            px-3
-                            py-1
-                            rounded-full
-                            text-xs
-                            font-medium
-
-                            ${
-                              status
-                              === 'ACTIVE'
-
-                                ? `
-                                  bg-emerald-100
-                                  text-emerald-700
-                                `
-
-                                : status
-                                === 'PAUSED'
-
-                                  ? `
-                                    bg-amber-100
-                                    text-amber-700
-                                  `
-
-                                  : `
-                                    bg-zinc-200
-                                    text-zinc-700
-                                  `
-                            }
-                          `}
-                        >
-
-                          {
-                            status
-                          }
-
-                        </span>
-
-                      </td>
-
-                      <td className="
-                        p-5
-                        text-zinc-600
-                      ">
-
-                        {
-                          item.nextOccurrence
-                        }
-
-                      </td>
-
-                      <td className="
-                        p-5
-                      ">
-
-                        <div className="
-                          flex
-                          items-center
-                          gap-3
-                        ">
-
-                          <Link
-                            href={`/recurring-transactions/${item.id}/edit`}
-
-                            className="
-                              text-sm
-                              font-medium
-                              text-zinc-700
-                              hover:text-zinc-900
-                            "
-                          >
-                            Editar
-                          </Link>
-
-                          {
-                            item.isActive
-                            &&
-                            !item.endedAt
-                            && (
-
-                              <form
-                                action={`
-                                  /api/recurring-transactions/${item.id}/pause
-                                `}
-
-                                method="POST"
-                              >
-
-                                <button
-                                  type="submit"
-
-                                  className="
-                                    text-sm
-                                    font-medium
-                                    text-amber-700
-                                    hover:text-amber-900
-                                  "
-                                >
-                                  Pausar
-                                </button>
-
-                              </form>
-                            )
-                          }
-
-                          {
-                            !item.endedAt
-                            && (
-
-                              <form
-                                action={`
-                                  /api/recurring-transactions/${item.id}/end
-                                `}
-
-                                method="POST"
-                              >
-
-                                <button
-                                  type="submit"
-
-                                  className="
-                                    text-sm
-                                    font-medium
-                                    text-red-700
-                                    hover:text-red-900
-                                  "
-                                >
-                                  Encerrar
-                                </button>
-
-                              </form>
-                            )
-                          }
-
-                        </div>
-
-                      </td>
-
-                    </tr>
-                  );
-                }
-              )
-            }
-
-          </tbody>
-
-        </table>
+              </Link>
+            )
+          )
+        }
 
       </div>
 

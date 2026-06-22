@@ -14,6 +14,7 @@ import {
 
 import {
   eq,
+  and,
 } from 'drizzle-orm';
 
 import {
@@ -28,8 +29,11 @@ async function
 run() {
 
   console.log(
-    'Starting credit card backfill...',
+    'BACKFILL STARTED'
   );
+
+  const affectedMonths =
+    new Set<string>();
 
   const allTransactions =
     await db
@@ -96,10 +100,12 @@ run() {
           paymentMethod.methodType,
 
         invoiceClosingDay:
-          paymentMethod.closingDay ?? undefined,
+          paymentMethod.closingDay
+          ?? undefined,
 
         invoiceDueDay:
-          paymentMethod.dueDay ?? undefined,
+          paymentMethod.dueDay
+          ?? undefined,
       });
 
     /*
@@ -114,9 +120,17 @@ run() {
         .from(financialMonths)
 
         .where(
-          eq(
-            financialMonths.referenceMonth,
-            correctReferenceMonth
+          and(
+
+            eq(
+              financialMonths.userId,
+              transaction.userId
+            ),
+
+            eq(
+              financialMonths.referenceMonth,
+              correctReferenceMonth
+            )
           )
         );
 
@@ -173,9 +187,20 @@ run() {
       continue;
     }
 
-    console.log(
-      `Moving transaction ${transaction.id} -> ${correctReferenceMonth}`
-    );
+    console.log({
+
+      description:
+        transaction.description,
+
+      from:
+        transaction.financialMonthId,
+
+      to:
+        targetMonth.id,
+
+      referenceMonth:
+        correctReferenceMonth,
+    });
 
     /*
     STORE OLD MONTH
@@ -206,24 +231,43 @@ run() {
       );
 
     /*
-    RECALCULATE OLD MONTH
+    TRACK RECALC
     */
 
-    await recalculateFinancialMonth(
+    affectedMonths.add(
       previousFinancialMonthId
     );
 
-    /*
-    RECALCULATE NEW MONTH
-    */
-
-    await recalculateFinancialMonth(
+    affectedMonths.add(
       targetMonth.id
     );
   }
 
+  /*
+  RECALCULATE MONTHS
+  */
+
   console.log(
-    'Backfill finished.',
+    'RECALCULATING MONTHS'
+  );
+
+  for (
+    const monthId
+    of affectedMonths
+  ) {
+
+    console.log(
+      'RECALCULATING',
+      monthId
+    );
+
+    await recalculateFinancialMonth(
+      monthId
+    );
+  }
+
+  console.log(
+    'BACKFILL FINISHED'
   );
 }
 

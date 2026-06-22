@@ -31,20 +31,12 @@ import {
 async function
 run() {
 
-  console.log(
-    'Clearing financial data...',
-  );
-
   /*
   INSTALLMENTS
   */
 
   await db.delete(
     installments
-  );
-
-  console.log(
-    'installments cleared',
   );
 
   /*
@@ -55,20 +47,12 @@ run() {
     transactions
   );
 
-  console.log(
-    'transactions cleared',
-  );
-
   /*
   INSTALLMENT PLANS
   */
 
   await db.delete(
     installmentPlans
-  );
-
-  console.log(
-    'installment plans cleared',
   );
 
   /*
@@ -79,20 +63,12 @@ run() {
     financialOperations
   );
 
-  console.log(
-    'financial operations cleared',
-  );
-
   /*
   RECURRING TRANSACTIONS
   */
 
   await db.delete(
     recurringTransactions
-  );
-
-  console.log(
-    'recurring transactions cleared',
   );
 
   /*
@@ -103,10 +79,6 @@ run() {
     recurrences
   );
 
-  console.log(
-    'recurrences cleared',
-  );
-
   /*
   FINANCIAL MONTHS
   */
@@ -115,13 +87,6 @@ run() {
     financialMonths
   );
 
-  console.log(
-    'financial months cleared',
-  );
-
-  console.log(
-    'Financial data cleared successfully.',
-  );
 }
 
 run();

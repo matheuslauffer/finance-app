@@ -12,6 +12,7 @@ import { db } from '@/db';
 
 import {
   eq,
+  and,
 } from 'drizzle-orm';
 
 import {
@@ -25,10 +26,6 @@ import {
 import {
   recurrences,
 } from '@/db/schema/recurrences';
-
-import {
-  recurringTransactions,
-} from '@/db/schema/recurring-transactions';
 
 type Props = {
 
@@ -58,33 +55,6 @@ EditRecurringTransactionPage({
   }
 
   /*
-  SNAPSHOT
-  */
-
-  const [snapshot] =
-    await db
-
-      .select()
-
-      .from(
-        recurringTransactions
-      )
-
-      .where(
-        eq(
-          recurringTransactions.id,
-          id
-        )
-      );
-
-  if (!snapshot) {
-
-    redirect(
-      '/recurring-transactions'
-    );
-  }
-
-  /*
   RECURRENCE
   */
 
@@ -98,9 +68,17 @@ EditRecurringTransactionPage({
       )
 
       .where(
-        eq(
-          recurrences.id,
-          snapshot.recurrenceId
+        and(
+
+          eq(
+            recurrences.id,
+            id
+          ),
+
+          eq(
+            recurrences.userId,
+            userId
+          )
         )
       );
 
@@ -149,8 +127,7 @@ EditRecurringTransactionPage({
             text-zinc-500
             mt-2
           ">
-            Alterações criarão
-            uma nova versão
+            Atualize os dados da recorrência
           </p>
 
         </div>
@@ -210,8 +187,19 @@ EditRecurringTransactionPage({
           paymentMethodId:
             recurring.paymentMethodId,
 
-          effectiveFrom:
-            recurring.nextOccurrence,
+          dueDay:
+            recurring.dueDay
+            ??
+            new Date(
+              recurring.nextOccurrence
+            ).getUTCDate(),
+
+          weekDay:
+            recurring.weekDay
+            ??
+            new Date(
+              recurring.nextOccurrence
+            ).getDay(),
 
           effectiveUntil:
             recurring.endedAt,

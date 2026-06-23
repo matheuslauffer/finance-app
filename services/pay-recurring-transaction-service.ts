@@ -19,6 +19,10 @@ import {
 } from '@/db/schema/financial-months';
 
 import {
+  transactions,
+} from '@/db/schema/transactions';
+
+import {
   eq,
   and,
 } from 'drizzle-orm';
@@ -75,13 +79,36 @@ payRecurringTransaction({
     );
   }
 
-  /*
-  ALREADY FULFILLED
-  */
+  const [existingTransaction] =
+    await db
+
+      .select()
+
+      .from(transactions)
+
+      .where(
+        and(
+
+          eq(
+            transactions.recurringTransactionId,
+            snapshot.id
+          ),
+
+          eq(
+            transactions.status,
+            'CONFIRMED'
+          )
+        )
+      );
+
+  if (existingTransaction) {
+
+    return;
+  }
 
   if (
     snapshot.status
-    === 'FULFILLED'
+    === 'CANCELLED'
   ) {
 
     return;

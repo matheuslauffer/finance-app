@@ -3,39 +3,25 @@ import {
 } from '@clerk/nextjs/server';
 
 import {
-  getCurrentMonth,
-} from '@/lib/current-month';
+  db,
+} from '@/db';
 
 import {
   generateRecurringTransactions,
 } from '@/services/generate-recurring-transactions-service';
 
-function
-normalizeMonth(
-  month?: string
-) {
+import {
+  recurrences,
+} from '@/db/schema/recurrences';
 
-  if (
-    month
-    && /^\d{4}-\d{2}$/.test(
-      month
-    )
-  ) {
-
-    return month;
-  }
-
-  return getCurrentMonth()
-    .slice(
-      0,
-      7
-    );
-}
+import {
+  and,
+  eq,
+  isNull,
+} from 'drizzle-orm';
 
 export async function
-POST(
-  request: Request
-) {
+POST() {
 
   const session =
     await auth();
@@ -57,25 +43,65 @@ POST(
     );
   }
 
-  const body =
-    await request
-      .json()
-      .catch(
-        () => ({})
+  const activeRecurrences =
+    await db
+
+      .select({
+
+        id:
+          recurrences.id,
+      })
+
+      .from(recurrences)
+
+      .where(
+        and(
+
+          eq(
+            recurrences.userId,
+            userId
+          ),
+
+          eq(
+            recurrences.isActive,
+            true
+          ),
+
+          isNull(
+            recurrences.endedAt
+          )
+        )
       );
 
-  const month =
-    normalizeMonth(
-      body.month
-    );
+  let createdCount =
+    0;
 
-  const result =
-    await generateRecurringTransactions(
-      userId,
-      month
-    );
+  let skippedCount =
+    0;
+
+  for (
+    const recurrence
+    of activeRecurrences
+  ) {
+
+    const result =
+      await generateRecurringTransactions(
+        recurrence.id
+      );
+
+    createdCount +=
+      result.createdCount;
+
+    skippedCount +=
+      result.skippedCount;
+  }
+
 
   return Response.json(
-    result
+    {
+      createdCount,
+
+      skippedCount,
+    }
   );
 }

@@ -32,11 +32,20 @@ import {
 import {
   createFinancialOperation,
 } from '@/services/financial-operation-service';
-;
+
+import {
+  formatDateOnly,
+  getMonthlyDueDate,
+  getNextWeekdayDate,
+  normalizeDueDay,
+  normalizeWeekDay,
+} from '@/lib/recurrence-due-date';
 
 function
 addFrequency(
   date: Date,
+
+  dueDay: number,
 
   frequency:
     | 'DAILY'
@@ -77,19 +86,29 @@ addFrequency(
 
     case 'MONTHLY':
 
-      next.setMonth(
-        next.getMonth() + 1
-      );
+      return getMonthlyDueDate({
 
-      break;
+        year:
+          next.getFullYear(),
+
+        monthIndex:
+          next.getMonth() + 1,
+
+        dueDay,
+      });
 
     case 'YEARLY':
 
-      next.setFullYear(
-        next.getFullYear() + 1
-      );
+      return getMonthlyDueDate({
 
-      break;
+        year:
+          next.getFullYear() + 1,
+
+        monthIndex:
+          next.getMonth(),
+
+        dueDay,
+      });
   }
 
   return next;
@@ -97,7 +116,12 @@ addFrequency(
 
 export async function
 generateRecurringTransactions(
-  recurrenceId: string
+  recurrenceId: string,
+
+  options?: {
+
+    fromDate?: Date;
+  }
 ) {
 
   /*
@@ -148,32 +172,116 @@ generateRecurringTransactions(
 
   const isAutomatic =
   isAutomaticPaymentMethod(
-    paymentMethod.methodType
+    paymentMethod.methodType,
+
+    paymentMethod.requiresManualPayment
   );
 
   if (
     !recurrence.isActive
-    ||
-    recurrence.endedAt
   ) {
 
-    return;
+    return {
+
+      createdCount:
+        0,
+
+      skippedCount:
+        0,
+    };
   }
 
   /*
   GENERATE 12 MONTHS
   */
 
-  let currentDate =
+  let createdCount =
+    0;
+
+  let skippedCount =
+    0;
+
+  const recurrenceStartDate =
     new Date(
       recurrence.nextOccurrence
     );
+
+  const dueDay =
+    normalizeDueDay(
+      recurrence.dueDay
+      ??
+      recurrenceStartDate.getUTCDate()
+    );
+
+  const weekDay =
+    normalizeWeekDay(
+      recurrence.weekDay
+      ??
+      recurrenceStartDate.getDay()
+    );
+
+  let currentDate =
+    recurrence.frequency === 'WEEKLY'
+      ? getNextWeekdayDate({
+
+          fromDate:
+            recurrenceStartDate,
+
+          weekDay,
+        })
+      : getMonthlyDueDate({
+
+          year:
+            recurrenceStartDate
+              .getFullYear(),
+
+          monthIndex:
+            recurrenceStartDate
+              .getMonth(),
+
+          dueDay,
+        });
+
+  const endedAt =
+    recurrence.endedAt
+      ? new Date(
+          recurrence.endedAt
+      )
+      : null;
+
+  if (
+    options?.fromDate
+  ) {
+
+    while (
+      currentDate
+      <
+      options.fromDate
+    ) {
+
+      currentDate =
+        addFrequency(
+          currentDate,
+          dueDay,
+          recurrence.frequency
+        );
+    }
+  }
 
   for (
     let index = 0;
     index < 12;
     index++
   ) {
+
+    if (
+      endedAt
+      &&
+      currentDate > endedAt
+    ) {
+
+      break;
+    }
 
     /*
     REFERENCE MONTH
@@ -270,12 +378,139 @@ generateRecurringTransactions(
 
             eq(
               recurringTransactions
-                .financialMonthId,
+                .dueDate,
 
-              financialMonth.id
+              formatDateOnly(
+                currentDate
+              )
             )
           )
         );
+
+    const isMonthlyOrYearly =
+      recurrence.frequency === 'MONTHLY'
+      || recurrence.frequency === 'YEARLY';
+
+    if (
+      isMonthlyOrYearly
+    ) {
+
+      const monthSnapshots =
+        await db
+
+          .select()
+
+          .from(
+            recurringTransactions
+          )
+
+          .where(
+            and(
+
+              eq(
+                recurringTransactions
+                  .recurrenceId,
+
+                recurrence.id
+              ),
+
+              eq(
+                recurringTransactions
+                  .financialMonthId,
+
+                financialMonth.id
+              )
+            )
+          );
+
+      if (
+        monthSnapshots.length > 0
+      ) {
+
+        const hasFulfilled =
+          monthSnapshots.some(
+            (snapshot) =>
+              snapshot.status
+              === 'FULFILLED'
+          );
+
+        if (
+          hasFulfilled
+        ) {
+
+          skippedCount++;
+
+          currentDate =
+            addFrequency(
+              currentDate,
+              dueDay,
+              recurrence.frequency
+            );
+
+          continue;
+        }
+
+        const hasExactDueDate =
+          monthSnapshots.some(
+            (snapshot) =>
+              String(
+                snapshot.dueDate
+              )
+              ===
+              formatDateOnly(
+                currentDate
+              )
+          );
+
+        if (
+          hasExactDueDate
+        ) {
+
+          skippedCount++;
+
+          currentDate =
+            addFrequency(
+              currentDate,
+              dueDay,
+              recurrence.frequency
+            );
+
+          continue;
+        }
+
+        await db
+
+          .delete(
+            recurringTransactions
+          )
+
+          .where(
+            and(
+
+              eq(
+                recurringTransactions
+                  .recurrenceId,
+
+                recurrence.id
+              ),
+
+              eq(
+                recurringTransactions
+                  .financialMonthId,
+
+                financialMonth.id
+              ),
+
+              eq(
+                recurringTransactions
+                  .status,
+
+                'PROJECTED'
+              )
+            )
+          );
+      }
+    }
 
     /*
     SKIP DUPLICATE
@@ -314,9 +549,9 @@ generateRecurringTransactions(
             recurrence.amount,
 
           dueDate:
-            currentDate
-              .toISOString()
-              .split('T')[0],
+            formatDateOnly(
+              currentDate
+            ),
 
           status:
             isAutomatic
@@ -358,20 +593,25 @@ generateRecurringTransactions(
             currentDate,
 
           effectiveDate:
-            currentDate
-              .toISOString()
-              .split('T')[0],
+            formatDateOnly(
+              currentDate
+            ),
 
           dueDate:
-            currentDate
-              .toISOString()
-              .split('T')[0],
+            formatDateOnly(
+              currentDate
+            ),
 
           recurringTransactionId:
             snapshot.id,
         });
       }
 
+      createdCount++;
+
+    } else {
+
+      skippedCount++;
     }
 
     /*
@@ -381,25 +621,14 @@ generateRecurringTransactions(
     currentDate =
       addFrequency(
         currentDate,
+        dueDay,
         recurrence.frequency
       );
   }
-  await db
+  return {
 
-  .update(recurrences)
+    createdCount,
 
-  .set({
-
-    nextOccurrence:
-      currentDate
-        .toISOString()
-        .split('T')[0],
-  })
-
-  .where(
-    eq(
-      recurrences.id,
-      recurrence.id
-    )
-  );
+    skippedCount,
+  };
 }

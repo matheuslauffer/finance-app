@@ -24,6 +24,11 @@ import {
   createRecurrence,
 } from '@/services/create-recurrence-service';
 
+import {
+  normalizeDueDay,
+  normalizeWeekDay,
+} from '@/lib/recurrence-due-date';
+
 export async function GET() {
 
   const result =
@@ -215,6 +220,24 @@ export async function POST(
 
       nextOccurrence:
         dueDate,
+
+      dueDay:
+        normalizeDueDay(
+          new Date(
+            dueDate
+          ).getUTCDate()
+        ),
+
+      weekDay:
+        formData.get(
+          'frequency'
+        ) === 'WEEKLY'
+          ? normalizeWeekDay(
+              new Date(
+                dueDate
+              ).getDay()
+            )
+          : null,
     });
 
     return Response.redirect(

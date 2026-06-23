@@ -50,8 +50,11 @@ type Props = {
     paymentMethodId:
       string;
 
-    effectiveFrom:
-      string;
+    dueDay:
+      number;
+
+    weekDay:
+      number | null;
 
     effectiveUntil:
       string | null;
@@ -104,6 +107,21 @@ RecurringTransactionForm({
       ?.transactionType
 
     ?? 'EXPENSE'
+  );
+
+  const [
+    frequency,
+    setFrequency,
+  ] = useState<
+    | 'DAILY'
+    | 'WEEKLY'
+    | 'BIWEEKLY'
+    | 'MONTHLY'
+    | 'YEARLY'
+  >(
+    initialData
+      ?.frequency
+    ?? 'MONTHLY'
   );
 
   function
@@ -355,12 +373,21 @@ RecurringTransactionForm({
           <select
             name="frequency"
 
-            required
+            value={frequency}
 
-            defaultValue={
-              initialData
-                ?.frequency
-            }
+            onChange={(event) => {
+
+              setFrequency(
+                event.target.value as
+                  | 'DAILY'
+                  | 'WEEKLY'
+                  | 'BIWEEKLY'
+                  | 'MONTHLY'
+                  | 'YEARLY'
+              );
+            }}
+
+            required
 
             className="
               border
@@ -608,32 +635,102 @@ RecurringTransactionForm({
             font-medium
             text-zinc-700
           ">
-            Início
+            {
+              frequency === 'WEEKLY'
+                ? 'Dia da semana'
+                : 'Dia do vencimento'
+            }
           </label>
 
-          <input
-            type="date"
+          {
+            frequency === 'WEEKLY'
+              ? (
 
-            name="effectiveFrom"
+                  <select
+                    name="weekDay"
 
-            required
+                    required
 
-            defaultValue={
-              initialData
-                ?.effectiveFrom
-            }
+                    defaultValue={
+                      initialData
+                        ?.weekDay
+                      ?? 1
+                    }
 
-            className="
-              border
-              border-zinc-300
-              rounded-2xl
-              px-4
-              py-3
-              bg-white
-              text-zinc-900
-              placeholder:text-zinc-400
-            "
-          />
+                    className="
+                      border
+                      border-zinc-300
+                      rounded-2xl
+                      px-4
+                      py-3
+                      bg-white
+                      text-zinc-900
+                      placeholder:text-zinc-400
+                    "
+                  >
+                    <option value={0}>
+                      Domingo
+                    </option>
+
+                    <option value={1}>
+                      Segunda-feira
+                    </option>
+
+                    <option value={2}>
+                      Terça-feira
+                    </option>
+
+                    <option value={3}>
+                      Quarta-feira
+                    </option>
+
+                    <option value={4}>
+                      Quinta-feira
+                    </option>
+
+                    <option value={5}>
+                      Sexta-feira
+                    </option>
+
+                    <option value={6}>
+                      Sábado
+                    </option>
+                  </select>
+                )
+              : (
+
+                  <input
+                    type="number"
+
+                    name="dueDay"
+
+                    required
+
+                    min={1}
+
+                    max={31}
+
+                    defaultValue={
+                      initialData
+                        ?.dueDay
+                      ?? 1
+                    }
+
+                    placeholder="Ex: 6"
+
+                    className="
+                      border
+                      border-zinc-300
+                      rounded-2xl
+                      px-4
+                      py-3
+                      bg-white
+                      text-zinc-900
+                      placeholder:text-zinc-400
+                    "
+                  />
+                )
+          }
 
         </div>
 

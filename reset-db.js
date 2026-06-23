@@ -1,8 +1,12 @@
-const postgres = require('postgres');
-
-const sql = postgres('postgresql://postgres:postgres@localhost:5432/postgres');
-
 (async () => {
+  const { default: postgres } =
+    await import('postgres');
+
+  const sql =
+    postgres(
+      'postgresql://postgres:postgres@localhost:5432/postgres'
+    );
+
   try {
     await sql`SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = 'finance_app' AND pid <> pg_backend_pid()`;
     await sql`DROP DATABASE IF EXISTS finance_app`;

@@ -14,6 +14,14 @@ import {
   updateRecurringTransaction,
 } from '@/services/update-recurring-transaction-service';
 
+import {
+  formatDateOnly,
+  getCurrentMonthDueDate,
+  getNextWeekdayDate,
+  normalizeDueDay,
+  normalizeWeekDay,
+} from '@/lib/recurrence-due-date';
+
 export async function
 POST(
   request: Request
@@ -45,6 +53,34 @@ POST(
       'recurringTransactionId'
     ) as string | null;
 
+  const dueDay =
+    normalizeDueDay(
+      Number(
+        formData.get(
+          'dueDay'
+        )
+      )
+    );
+
+  const weekDay =
+    normalizeWeekDay(
+      Number(
+        formData.get(
+          'weekDay'
+        )
+      )
+    );
+
+  const frequency =
+    formData.get(
+      'frequency'
+    ) as
+      | 'DAILY'
+      | 'WEEKLY'
+      | 'BIWEEKLY'
+      | 'MONTHLY'
+      | 'YEARLY';
+
   const payload = {
 
     description:
@@ -64,15 +100,7 @@ POST(
         | 'INCOME'
         | 'EXPENSE',
 
-    frequency:
-      formData.get(
-        'frequency'
-      ) as
-        | 'DAILY'
-        | 'WEEKLY'
-        | 'BIWEEKLY'
-        | 'MONTHLY'
-        | 'YEARLY',
+    frequency,
 
     categoryId:
       formData.get(
@@ -84,10 +112,30 @@ POST(
         'paymentMethodId'
       ) as string,
 
+    dueDay,
+
+    weekDay:
+      frequency === 'WEEKLY'
+        ? weekDay
+        : null,
+
     nextOccurrence:
-      formData.get(
-        'effectiveFrom'
-      ) as string,
+      frequency === 'WEEKLY'
+        ? formatDateOnly(
+            getNextWeekdayDate({
+
+              fromDate:
+                new Date(),
+
+              weekDay,
+            })
+          )
+        : formatDateOnly(
+            getCurrentMonthDueDate(
+              dueDay
+            )
+        )
+      ,
 
     endedAt:
       formData.get(

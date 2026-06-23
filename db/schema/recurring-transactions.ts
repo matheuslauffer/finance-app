@@ -163,7 +163,7 @@ recurringTransactions =
 
           table.recurrenceId,
 
-          table.financialMonthId
+          table.dueDate
         ),
     ]
   );

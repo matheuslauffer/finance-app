@@ -14,36 +14,13 @@ import {
 
 import {
   eq,
+  and,
 } from 'drizzle-orm';
 
 export async function
 recalculateFinancialMonth(
   financialMonthId: string
 ) {
-
-  /*
-  REALIZED
-  */
-
-  const monthTransactions =
-    await db
-
-      .select()
-
-      .from(transactions)
-
-      .where(
-        eq(
-          transactions
-            .financialMonthId,
-
-          financialMonthId
-        )
-      );
-
-  /*
-  FORECAST
-  */
 
   const monthRecurringTransactions =
     await db
@@ -63,24 +40,40 @@ recalculateFinancialMonth(
         )
       );
 
-  let income = 0;
+  const monthTransactions =
+    await db
 
-  let expense = 0;
+      .select()
+
+      .from(transactions)
+
+      .where(
+        and(
+          eq(
+            transactions.financialMonthId,
+            financialMonthId
+          ),
+          eq(
+            transactions.status,
+            'CONFIRMED'
+          )
+        )
+      );
+
+  let projectedIncome = 0;
+
+  let projectedExpense = 0;
 
   let committed = 0;
 
   /*
-  PROJECTED RECURRING
+  PENDING PROJECTIONS
   */
 
   for (
     const snapshot
     of monthRecurringTransactions
   ) {
-
-    /*
-    ONLY PENDING PROJECTIONS
-    */
 
     if (
       snapshot.status
@@ -100,7 +93,7 @@ recalculateFinancialMonth(
       === 'INCOME'
     ) {
 
-      income += amount;
+      projectedIncome += amount;
     }
 
     if (
@@ -108,14 +101,14 @@ recalculateFinancialMonth(
       === 'EXPENSE'
     ) {
 
-      expense += amount;
+      projectedExpense += amount;
 
       committed += amount;
     }
   }
 
   /*
-  REALIZED TRANSACTIONS
+  CONFIRMED TRANSACTIONS
   */
 
   for (
@@ -133,7 +126,7 @@ recalculateFinancialMonth(
       === 'INCOME'
     ) {
 
-      income += amount;
+      projectedIncome += amount;
     }
 
     if (
@@ -141,9 +134,7 @@ recalculateFinancialMonth(
       === 'EXPENSE'
     ) {
 
-      expense += amount;
-
-      committed += amount;
+      projectedExpense += amount;
     }
   }
 
@@ -151,8 +142,9 @@ recalculateFinancialMonth(
   BALANCE
   */
 
-  const balance =
-    income - expense;
+  const projectedBalance =
+    projectedIncome -
+    projectedExpense;
 
   /*
   UPDATE MONTH
@@ -165,13 +157,13 @@ recalculateFinancialMonth(
     .set({
 
       projectedIncome:
-        String(income),
+        String(projectedIncome),
 
       projectedExpense:
-        String(expense),
+        String(projectedExpense),
 
       projectedBalance:
-        String(balance),
+        String(projectedBalance),
 
       committedAmount:
         String(committed),

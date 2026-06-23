@@ -131,6 +131,21 @@ Sidebar() {
                 Recorrências
               </Link>
 
+              <Link
+                href="/projections"
+
+                className="
+                  p-3
+                  rounded-2xl
+                  hover:bg-zinc-100
+                  transition
+                  text-zinc-700
+                  font-medium
+                "
+              >
+                Projeções
+              </Link>
+
             </div>
 
           </div>

@@ -1,0 +1,1 @@
+ALTER TABLE "recurrences" ALTER COLUMN "due_day" DROP NOT NULL;

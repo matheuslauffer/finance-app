@@ -32,6 +32,11 @@ type Input = {
     | 'EXPENSE';
 
   nextOccurrence: string;
+
+  dueDay: number;
+
+  weekDay:
+    number | null;
 };
 
 export async function
@@ -69,6 +74,12 @@ createRecurrence(
 
         nextOccurrence:
           input.nextOccurrence,
+
+        dueDay:
+          input.dueDay,
+
+        weekDay:
+          input.weekDay,
 
         isActive:
           true,

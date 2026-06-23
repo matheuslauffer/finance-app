@@ -463,7 +463,7 @@ ProjectionMonthPage({
               text-zinc-500
               mt-2
             ">
-              Pendentes, previstos e realizados
+              Contas previstas ainda não pagas
             </p>
 
           </div>
@@ -565,6 +565,8 @@ ProjectionMonthPage({
                         item.status === 'PROJECTED'
                         &&
                         item.transactionType === 'EXPENSE'
+                        &&
+                        item.paymentMethodType !== 'CREDIT_CARD'
                         && (
 
                           <form

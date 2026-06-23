@@ -386,6 +386,9 @@ RecurringTransactionPage({
           item.status === 'PROJECTED'
           &&
           item.transactionType === 'EXPENSE'
+          &&
+          transaction.paymentMethod
+            ?.methodType !== 'CREDIT_CARD'
           && (
 
             <form
@@ -424,6 +427,26 @@ RecurringTransactionPage({
             </form>
           )
         }
+
+        <Link
+          href={`/recurring-transactions/${item.recurrenceId}/edit`}
+
+          className="
+            inline-flex
+            px-5
+            py-3
+            rounded-2xl
+            border
+            border-zinc-300
+            bg-white
+            text-zinc-900
+            font-medium
+            hover:bg-zinc-50
+            transition
+          "
+        >
+          Editar recorrência
+        </Link>
 
       </div>
 

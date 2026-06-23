@@ -1,10 +1,16 @@
 export function
 isAutomaticPaymentMethod(
-  methodType: string
+  methodType: string,
+
+  requiresManualPayment = false
 ) {
 
+  if (requiresManualPayment) {
+
+    return false;
+  }
+
   return [
-    'CREDIT_CARD',
     'AUTO_DEBIT',
   ].includes(
     methodType

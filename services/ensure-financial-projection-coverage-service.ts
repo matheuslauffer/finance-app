@@ -19,6 +19,7 @@ import {
 import {
   and,
   eq,
+  sql,
 } from 'drizzle-orm';
 
 import {
@@ -28,6 +29,14 @@ import {
 import {
   recalculateFinancialMonth,
 } from './recalculate-financial-month';
+
+import {
+  formatDateOnly,
+  getMonthlyDueDate,
+  getNextWeekdayDate,
+  normalizeDueDay,
+  normalizeWeekDay,
+} from '@/lib/recurrence-due-date';
 
 type Input = {
 
@@ -81,6 +90,10 @@ shouldGenerateRecurrenceForMonth(
       | 'YEARLY';
 
     nextOccurrence: string;
+
+    dueDay: number | null;
+
+    weekDay: number | null;
 
     endedAt: string | null;
   },
@@ -314,43 +327,11 @@ ensureFinancialProjectionCoverage({
       }
 
       /*
-      EXISTING SNAPSHOT
+      DUE DATES
       */
 
-      const [existingSnapshot] =
-        await db
-
-          .select()
-
-          .from(
-            recurringTransactions
-          )
-
-          .where(
-            and(
-
-              eq(
-                recurringTransactions
-                  .recurrenceId,
-
-                recurrence.id
-              ),
-
-              eq(
-                recurringTransactions
-                  .financialMonthId,
-
-                financialMonth.id
-              )
-            )
-          );
-
-      if (
-        existingSnapshot
-      ) {
-
-        continue;
-      }
+      const dueDates: string[] =
+        [];
 
       /*
       PAYMENT METHOD
@@ -377,56 +358,357 @@ ensureFinancialProjectionCoverage({
 
       const isAutomatic =
         isAutomaticPaymentMethod(
-          paymentMethod.methodType
+          paymentMethod.methodType,
+
+          paymentMethod.requiresManualPayment
         );
 
-      /*
-      DUE DATE
-      */
+      const [
+        dueYear,
+        dueMonth,
+      ] =
+        currentReferenceMonth
+          .split('-')
+          .map(Number);
 
-      const dueDate =
-        `${currentReferenceMonth}-01`;
+      if (
+        recurrence.frequency
+        === 'WEEKLY'
+      ) {
+
+        const weekDay =
+          normalizeWeekDay(
+            recurrence.weekDay
+            ??
+            new Date(
+              recurrence.nextOccurrence
+            ).getDay()
+          );
+
+        let weeklyDate =
+          getNextWeekdayDate({
+
+            fromDate:
+              currentReferenceMonth
+              ===
+              new Date(
+                recurrence.nextOccurrence
+              )
+                .toISOString()
+                .slice(0, 7)
+                ? new Date(
+                    recurrence.nextOccurrence
+                  )
+                : new Date(
+                    dueYear,
+                    dueMonth - 1,
+                    1
+                  ),
+
+            weekDay,
+          });
+
+        while (
+          weeklyDate.getFullYear()
+          === dueYear
+          &&
+          weeklyDate.getMonth()
+          === dueMonth - 1
+        ) {
+
+          dueDates.push(
+            formatDateOnly(
+              weeklyDate
+            )
+          );
+
+          weeklyDate =
+            new Date(
+              weeklyDate
+            );
+
+          weeklyDate.setDate(
+            weeklyDate.getDate() + 7
+          );
+        }
+
+      } else {
+
+        dueDates.push(
+          formatDateOnly(
+          getMonthlyDueDate({
+
+            year:
+              dueYear,
+
+            monthIndex:
+              dueMonth - 1,
+
+            dueDay:
+              normalizeDueDay(
+                recurrence.dueDay
+                ??
+                new Date(
+                  recurrence.nextOccurrence
+                ).getUTCDate()
+              ),
+          })
+          )
+        );
+      }
 
       /*
       CREATE SNAPSHOT
       */
 
-      await db
+      for (
+        const dueDate
+        of dueDates
+      ) {
 
-        .insert(
-          recurringTransactions
-        )
+        const [existingSnapshot] =
+          await db
 
-        .values({
+            .select()
 
-          recurrenceId:
-            recurrence.id,
+            .from(
+              recurringTransactions
+            )
 
-          financialMonthId:
-            financialMonth.id,
+            .where(
+              and(
 
-          categoryId:
-            recurrence.categoryId,
+                eq(
+                  recurringTransactions
+                    .recurrenceId,
 
-          paymentMethodId:
-            recurrence.paymentMethodId,
+                  recurrence.id
+                ),
 
-          description:
-            recurrence.description,
+                eq(
+                  recurringTransactions
+                    .dueDate,
 
-          transactionType:
-            recurrence.transactionType,
+                  dueDate
+                )
+              )
+            );
 
-          projectedAmount:
-            recurrence.amount,
+        const isMonthlyOrYearly =
+          recurrence.frequency === 'MONTHLY'
+          || recurrence.frequency === 'YEARLY';
 
-          dueDate,
+        if (
+          isMonthlyOrYearly
+        ) {
 
-          status:
-            isAutomatic
-              ? 'FULFILLED'
-              : 'PROJECTED',
-        });
+          const monthSnapshots =
+            await db
+
+              .select()
+
+              .from(
+                recurringTransactions
+              )
+
+              .where(
+                and(
+
+                  eq(
+                    recurringTransactions
+                      .recurrenceId,
+
+                    recurrence.id
+                  ),
+
+                  eq(
+                    recurringTransactions
+                      .financialMonthId,
+
+                    financialMonth.id
+                  )
+                )
+              );
+
+          if (
+            monthSnapshots.length > 0
+          ) {
+
+            const hasExactDueDate =
+              monthSnapshots.some(
+                (snapshot) =>
+                  String(
+                    snapshot.dueDate
+                  )
+                  ===
+                  dueDate
+              );
+
+            const hasProjectedOtherDates =
+              monthSnapshots.some(
+                (snapshot) =>
+                  snapshot.status
+                  === 'PROJECTED'
+                  &&
+                  String(
+                    snapshot.dueDate
+                  )
+                  !==
+                  dueDate
+              );
+
+            if (
+              hasExactDueDate
+              &&
+              hasProjectedOtherDates
+            ) {
+
+              await db
+
+                .delete(
+                  recurringTransactions
+                )
+
+                .where(
+                  and(
+
+                    eq(
+                      recurringTransactions
+                        .recurrenceId,
+
+                      recurrence.id
+                    ),
+
+                    eq(
+                      recurringTransactions
+                        .financialMonthId,
+
+                      financialMonth.id
+                    ),
+
+                    eq(
+                      recurringTransactions
+                        .status,
+
+                      'PROJECTED'
+                    ),
+
+                    sql`
+                      ${recurringTransactions.dueDate}
+                      <> ${dueDate}
+                    `
+                  )
+                );
+            }
+
+            const hasFulfilled =
+              monthSnapshots.some(
+                (snapshot) =>
+                  snapshot.status
+                  === 'FULFILLED'
+              );
+
+            if (
+              hasFulfilled
+            ) {
+
+              continue;
+            }
+
+            if (
+              hasExactDueDate
+            ) {
+
+              continue;
+            }
+
+            if (
+              monthSnapshots.some(
+                (snapshot) =>
+                  snapshot.status
+                  === 'PROJECTED'
+              )
+            ) {
+
+              await db
+
+                .delete(
+                  recurringTransactions
+                )
+
+                .where(
+                  and(
+
+                    eq(
+                      recurringTransactions
+                        .recurrenceId,
+
+                      recurrence.id
+                    ),
+
+                    eq(
+                      recurringTransactions
+                        .financialMonthId,
+
+                      financialMonth.id
+                    ),
+
+                    eq(
+                      recurringTransactions
+                        .status,
+
+                      'PROJECTED'
+                    )
+                  )
+                );
+            }
+          }
+        }
+
+        if (
+          existingSnapshot
+        ) {
+
+          continue;
+        }
+
+        await db
+
+          .insert(
+            recurringTransactions
+          )
+
+          .values({
+
+            recurrenceId:
+              recurrence.id,
+
+            financialMonthId:
+              financialMonth.id,
+
+            categoryId:
+              recurrence.categoryId,
+
+            paymentMethodId:
+              recurrence.paymentMethodId,
+
+            description:
+              recurrence.description,
+
+            transactionType:
+              recurrence.transactionType,
+
+            projectedAmount:
+              recurrence.amount,
+
+            dueDate,
+
+            status:
+              isAutomatic
+                ? 'FULFILLED'
+                : 'PROJECTED',
+          });
+      }
     }
 
     /*

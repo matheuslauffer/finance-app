@@ -21,11 +21,21 @@ import {
   eq,
   desc,
   asc,
+  lte,
+  sql,
 } from 'drizzle-orm';
 
 import {
   getFinancialCompetencyDate,
 } from '@/lib/payment-method-competency';
+
+import {
+  ensureFinancialProjectionCoverage,
+} from './ensure-financial-projection-coverage-service';
+
+import {
+  payRecurringTransaction,
+} from './pay-recurring-transaction-service';
 
 type Input = {
 
@@ -38,6 +48,104 @@ type Input = {
   transactionsPage: number;
 };
 
+async function
+payDueCreditCardRecurringTransactions({
+  userId,
+  financialMonthId,
+}: {
+  userId: string;
+
+  financialMonthId: string;
+}) {
+
+  const today =
+    new Date()
+      .toISOString()
+      .split('T')[0];
+
+  const dueCreditCardItems =
+    await db
+
+      .select({
+
+        id:
+          recurringTransactions.id,
+      })
+
+      .from(recurringTransactions)
+
+      .innerJoin(
+
+        paymentMethods,
+
+        eq(
+          recurringTransactions.paymentMethodId,
+          paymentMethods.id
+        )
+      )
+
+      .where(
+        and(
+
+          eq(
+            recurringTransactions.financialMonthId,
+            financialMonthId
+          ),
+
+          eq(
+            recurringTransactions.transactionType,
+            'EXPENSE'
+          ),
+
+          eq(
+            paymentMethods.methodType,
+            'CREDIT_CARD'
+          ),
+
+          lte(
+            recurringTransactions.dueDate,
+            today
+          ),
+
+          sql`
+            ${recurringTransactions.status}
+            <> 'CANCELLED'
+          `,
+
+          sql`
+            not exists (
+              select
+                1
+              from
+                transactions
+              where
+                transactions.recurring_transaction_id
+                =
+                ${recurringTransactions.id}::text
+              and
+                transactions.status
+                =
+                'CONFIRMED'
+            )
+          `
+        )
+      );
+
+  for (
+    const item
+    of dueCreditCardItems
+  ) {
+
+    await payRecurringTransaction({
+
+      userId,
+
+      recurringTransactionId:
+        item.id,
+    });
+  }
+}
+
 export async function
 getProjectionMonth({
   userId,
@@ -46,7 +154,15 @@ getProjectionMonth({
   transactionsPage,
 }: Input) {
 
-  const [financialMonth] =
+  await ensureFinancialProjectionCoverage({
+
+    userId,
+
+    untilReferenceMonth:
+      referenceMonth,
+  });
+
+  const [initialFinancialMonth] =
     await db
 
       .select()
@@ -65,6 +181,33 @@ getProjectionMonth({
             financialMonths.referenceMonth,
             referenceMonth
           )
+        )
+      );
+
+  if (!initialFinancialMonth) {
+
+    return null;
+  }
+
+  await payDueCreditCardRecurringTransactions({
+
+    userId,
+
+    financialMonthId:
+      initialFinancialMonth.id,
+  });
+
+  const [financialMonth] =
+    await db
+
+      .select()
+
+      .from(financialMonths)
+
+      .where(
+        eq(
+          financialMonths.id,
+          initialFinancialMonth.id
         )
       );
 
@@ -102,9 +245,39 @@ getProjectionMonth({
       )
 
       .where(
-        eq(
-          recurringTransactions.financialMonthId,
-          financialMonth.id
+        and(
+
+          eq(
+            recurringTransactions.financialMonthId,
+            financialMonth.id
+          ),
+
+          eq(
+            recurringTransactions.transactionType,
+            'EXPENSE'
+          ),
+
+          sql`
+            ${recurringTransactions.status}
+            <> 'CANCELLED'
+          `,
+
+          sql`
+            not exists (
+              select
+                1
+              from
+                transactions
+              where
+                transactions.recurring_transaction_id
+                =
+                ${recurringTransactions.id}::text
+              and
+                transactions.status
+                =
+                'CONFIRMED'
+            )
+          `
         )
       )
 
@@ -147,6 +320,14 @@ getProjectionMonth({
         return {
 
           ...item.recurring,
+
+          paymentMethodType:
+            item.paymentMethod
+              ?.methodType
+            ?? null,
+
+          status:
+            'PROJECTED' as const,
 
           competencyDate,
         };
@@ -198,15 +379,33 @@ getProjectionMonth({
       )
 
       .where(
-        eq(
-          transactions.financialMonthId,
-          financialMonth.id
+        and(
+
+          eq(
+            transactions.financialMonthId,
+            financialMonth.id
+          ),
+
+          eq(
+            transactions.status,
+            'CONFIRMED'
+          ),
+
+          eq(
+            transactions.transactionType,
+            'EXPENSE'
+          )
         )
       )
 
       .orderBy(
+
         desc(
           transactions.effectiveDate
+        ),
+
+        desc(
+          transactions.createdAt
         )
       )
 
@@ -246,14 +445,7 @@ getProjectionMonth({
 
           competencyDate,
         };
-      })
-
-      .sort((a, b) => (
-
-        b.competencyDate.getTime()
-        -
-        a.competencyDate.getTime()
-      ));
+      });
 
   const hasMoreTransactions =
     realizedTransactions.length > 5;

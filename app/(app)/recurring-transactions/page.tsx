@@ -23,6 +23,16 @@ import {
   formatCurrency,
 } from '@/lib/currency';
 
+const weekDayLabels = [
+  'domingo',
+  'segunda-feira',
+  'terça-feira',
+  'quarta-feira',
+  'quinta-feira',
+  'sexta-feira',
+  'sábado',
+];
+
 export default async function
 RecurringTransactionsPage() {
 
@@ -159,6 +169,28 @@ RecurringTransactionsPage() {
                       mt-1
                     ">
                       {item.frequency}
+                      {' '}
+                      •
+                      {' '}
+                      {
+                        item.frequency === 'WEEKLY'
+                          ? `toda ${
+                              weekDayLabels[
+                                item.weekDay
+                                ??
+                                new Date(
+                                  item.nextOccurrence
+                                ).getDay()
+                              ]
+                            }`
+                          : `vence dia ${
+                              item.dueDay
+                              ??
+                              new Date(
+                                item.nextOccurrence
+                              ).getUTCDate()
+                            }`
+                      }
                     </p>
 
                   </div>

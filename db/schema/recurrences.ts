@@ -5,6 +5,7 @@ import {
   numeric,
   date,
   boolean,
+  integer,
 } from 'drizzle-orm/pg-core';
 
 import { users } from './users';
@@ -52,6 +53,14 @@ export const recurrences = pgTable(
     nextOccurrence: date(
       'next_occurrence'
     ).notNull(),
+
+    dueDay: integer(
+      'due_day'
+    ),
+
+    weekDay: integer(
+      'week_day'
+    ),
 
     isActive: boolean('is_active')
       .default(true)

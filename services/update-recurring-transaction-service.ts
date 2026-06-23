@@ -18,6 +18,7 @@ import {
   and,
   eq,
   gte,
+  sql,
 } from 'drizzle-orm';
 
 import {
@@ -55,6 +56,11 @@ type Input = {
 
   nextOccurrence: string;
 
+  dueDay: number;
+
+  weekDay:
+    number | null;
+
   endedAt:
     string | null;
 };
@@ -80,8 +86,17 @@ updateRecurringTransaction({
 
   nextOccurrence,
 
+  dueDay,
+
+  weekDay,
+
   endedAt,
 }: Input) {
+
+  const today =
+    new Date()
+      .toISOString()
+      .split('T')[0];
 
   /*
   OLD SNAPSHOTS
@@ -106,21 +121,29 @@ updateRecurringTransaction({
             recurrenceId
           ),
 
-          eq(
-            recurringTransactions
-              .status,
-
-            'PROJECTED'
-          ),
-
           gte(
             recurringTransactions
               .dueDate,
 
-            new Date()
-              .toISOString()
-              .split('T')[0]
-          )
+            today
+          ),
+
+          sql`
+            not exists (
+              select
+                1
+              from
+                transactions
+              where
+                transactions.recurring_transaction_id
+                =
+                ${recurringTransactions.id}::text
+              and
+                transactions.status
+                =
+                'CONFIRMED'
+            )
+          `
         )
       );
 
@@ -159,21 +182,29 @@ updateRecurringTransaction({
           recurrenceId
         ),
 
-        eq(
-          recurringTransactions
-            .status,
-
-          'PROJECTED'
-        ),
-
         gte(
           recurringTransactions
             .dueDate,
 
-          new Date()
-            .toISOString()
-            .split('T')[0]
-        )
+          today
+        ),
+
+        sql`
+          not exists (
+            select
+              1
+            from
+              transactions
+            where
+              transactions.recurring_transaction_id
+              =
+              ${recurringTransactions.id}::text
+            and
+              transactions.status
+              =
+              'CONFIRMED'
+          )
+        `
       )
     );
 
@@ -201,6 +232,10 @@ updateRecurringTransaction({
 
       nextOccurrence,
 
+      dueDay,
+
+      weekDay,
+
       endedAt,
     })
 
@@ -224,7 +259,14 @@ updateRecurringTransaction({
   */
 
   await generateRecurringTransactions(
-    recurrenceId
+    recurrenceId,
+
+    {
+      fromDate:
+        new Date(
+          today
+        ),
+    }
   );
 
   /*
@@ -250,7 +292,14 @@ updateRecurringTransaction({
 
       .select()
 
-      .from(financialMonths);
+      .from(financialMonths)
+
+      .where(
+        eq(
+          financialMonths.userId,
+          userId
+        )
+      );
 
   for (
     const month

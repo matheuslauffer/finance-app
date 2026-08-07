@@ -22,6 +22,8 @@ type Input = {
   categoryId: string;
 
   amount: string;
+
+  recurringTransactionId?: string;
 };
 
 export async function
@@ -30,6 +32,7 @@ reconcileRecurringTransaction({
   financialMonthId,
   categoryId,
   amount,
+  recurringTransactionId,
 }: Input) {
 
   const [snapshot] =
@@ -42,28 +45,41 @@ reconcileRecurringTransaction({
       )
 
       .where(
-        and(
+        recurringTransactionId
+          ? and(
 
-          eq(
-            recurringTransactions.financialMonthId,
-            financialMonthId
-          ),
+              eq(
+                recurringTransactions.id,
+                recurringTransactionId
+              ),
 
-          eq(
-            recurringTransactions.categoryId,
-            categoryId
-          ),
+              eq(
+                recurringTransactions.status,
+                'PROJECTED'
+              )
+            )
+          : and(
 
-          eq(
-            recurringTransactions.projectedAmount,
-            amount
-          ),
+              eq(
+                recurringTransactions.financialMonthId,
+                financialMonthId
+              ),
 
-          eq(
-            recurringTransactions.status,
-            'PROJECTED'
-          )
-        )
+              eq(
+                recurringTransactions.categoryId,
+                categoryId
+              ),
+
+              eq(
+                recurringTransactions.projectedAmount,
+                amount
+              ),
+
+              eq(
+                recurringTransactions.status,
+                'PROJECTED'
+              )
+            )
       );
 
   if (!snapshot) {

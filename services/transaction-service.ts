@@ -9,6 +9,7 @@ import {
   eq,
   and,
   ilike,
+  sql,
 } from 'drizzle-orm';
 
 type CreateTransactionInput = {
@@ -47,6 +48,11 @@ type GetTransactionsInput = {
   transactionType?:
     | 'INCOME'
     | 'EXPENSE';
+  paymentMethodId?: string;
+
+  limit?: number;
+
+  cursor?: string;
 };
 
 export async function
@@ -99,6 +105,9 @@ getTransactions({
   userId,
   search,
   transactionType,
+  paymentMethodId,
+  limit = 20,
+  cursor,
 }: GetTransactionsInput)
 {
 
@@ -140,6 +149,40 @@ getTransactions({
     );
   }
 
+  if (paymentMethodId) {
+    filters.push(
+      eq(
+        transactions.paymentMethodId,
+        paymentMethodId
+      )
+    );
+  }
+
+  /*
+  CURSOR
+  */
+
+  if (cursor) {
+    const [
+      createdAtDate,
+      cursorId,
+    ] = cursor.split('|');
+
+    // Use ISO string for the timestamp comparison to ensure the DB receives
+    // a properly formatted timestamp parameter (avoid Date.toString()).
+    const createdAtIso = new Date(createdAtDate).toISOString();
+
+    filters.push(
+      sql`(
+        ${transactions.createdAt},
+        ${transactions.id}
+      ) < (
+        ${createdAtIso}::timestamp,
+        ${cursorId}::uuid
+      )`
+    );
+  }
+
   const result =
     await db
       .select()
@@ -154,8 +197,13 @@ getTransactions({
       .orderBy(
         desc(
           transactions.createdAt
+        ),
+        desc(
+          transactions.id
         )
-      );
+      )
+
+      .limit(limit + 1);
 
   return result;
 }

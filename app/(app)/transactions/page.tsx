@@ -11,10 +11,9 @@ import {
 import {
   getTransactions,
 } from '@/services/transaction-service';
+import { getPaymentMethods } from '@/services/payment-method-service';
 
-import {
-  formatCurrency,
-} from '@/lib/currency';
+import { TransactionsList } from './TransactionsList';
 
 type Props = {
   searchParams:
@@ -25,6 +24,7 @@ type Props = {
       type?:
         | 'INCOME'
         | 'EXPENSE';
+      paymentMethodId?: string;
     }>;
 };
 
@@ -53,6 +53,12 @@ TransactionsPage({
   const type =
     params.type;
 
+  const paymentMethodId =
+    params.paymentMethodId;
+
+  const paymentMethods =
+    await getPaymentMethods(userId);
+
   const transactions =
     await getTransactions({
 
@@ -62,6 +68,10 @@ TransactionsPage({
 
       transactionType:
         type,
+
+      paymentMethodId,
+
+      limit: 20,
     });
 
   return (
@@ -151,6 +161,39 @@ TransactionsPage({
         />
 
         <select
+          name="paymentMethodId"
+
+          defaultValue={paymentMethodId}
+
+          className="
+            border
+            border-zinc-300
+            rounded-2xl
+            px-4
+            py-3
+            bg-white
+            outline-none
+          "
+        >
+
+          <option value="">
+            Todos métodos
+          </option>
+
+          {
+            paymentMethods.map(
+              (pm) => (
+
+                <option key={pm.id} value={pm.id}>
+                  {pm.name}
+                </option>
+              )
+            )
+          }
+
+        </select>
+
+        <select
           name="type"
 
           defaultValue={type}
@@ -199,164 +242,15 @@ TransactionsPage({
 
       </form>
 
-      <div className="
-        flex
-        flex-col
-        gap-4
-      ">
-
-        {
-          transactions.map(
-            (transaction) => (
-
-              <div
-                key={transaction.id}
-
-                className="
-                  bg-white
-                  border
-                  border-zinc-200
-                  rounded-3xl
-                  p-6
-                  flex
-                  justify-between
-                  items-center
-                  hover:shadow-md
-                  transition
-                  hover:-translate-y-0.5
-                "
-              >
-
-                <div>
-
-                  <Link
-                    href={
-                      `/transactions/${transaction.id}`
-                    }
-                  >
-
-                    <p className="
-                      text-lg
-                      font-semibold
-                      text-zinc-900
-                      hover:text-zinc-700
-                      transition
-                    ">
-                      {
-                        transaction.description
-                      }
-                    </p>
-
-                  </Link>
-
-                  <p className="
-                    text-sm
-                    text-emerald-600
-                    font-medium
-                    mt-1
-                  ">
-                    {
-                      transaction.status
-                    }
-                  </p>
-
-                </div>
-
-                <div className="
-                  text-right
-                ">
-
-                  <p className="
-                    text-2xl
-                    font-bold
-                    text-zinc-900
-                  ">
-                    R$
-                    {
-                      formatCurrency(
-                        Number(
-                          transaction.amount
-                        )
-                      )
-                    }
-                  </p>
-
-                  <p className={`
-                    text-sm
-                    font-medium
-                    mt-1
-                    uppercase
-                    tracking-wide
-
-                    ${
-                      transaction.transactionType
-                      === 'INCOME'
-
-                        ? 'text-emerald-600'
-
-                        : 'text-red-500'
-                    }
-                  `}>
-                    {
-                      transaction.transactionType
-                    }
-                  </p>
-
-                  <div className="
-                    flex
-                    justify-end
-                    gap-4
-                    mt-3
-                  ">
-
-                    <Link
-                      href={`
-                        /transactions/${transaction.id}/edit
-                      `}
-
-                      className="
-                        text-sm
-                        font-medium
-                        text-zinc-700
-                        hover:text-zinc-900
-                      "
-                    >
-                      Editar
-                    </Link>
-
-                    <form
-                      action={`
-                        /api/transactions/${transaction.id}/delete
-                      `}
-
-                      method="POST"
-                    >
-
-                      <button
-                        type="submit"
-
-                        className="
-                          text-sm
-                          font-medium
-                          text-red-700
-                          hover:text-red-900
-                        "
-                      >
-                        Excluir
-                      </button>
-
-                    </form>
-
-                  </div>
-
-                </div>
-
-              </div>
-            )
-          )
+      <TransactionsList
+        initialTransactions={
+          transactions
         }
-
-      </div>
+        userId={userId}
+        search={search}
+        type={type}
+        paymentMethodId={paymentMethodId}
+      />
 
     </main>
   );

@@ -53,6 +53,9 @@ type Props = {
     dueDay:
       number;
 
+    annualMonth:
+      number;
+
     weekDay:
       number | null;
 
@@ -185,6 +188,22 @@ RecurringTransactionForm({
       )
       .format(amount);
   }
+
+  const monthOptions = [
+
+    'Janeiro',
+    'Fevereiro',
+    'Março',
+    'Abril',
+    'Maio',
+    'Junho',
+    'Julho',
+    'Agosto',
+    'Setembro',
+    'Outubro',
+    'Novembro',
+    'Dezembro',
+  ];
 
   return (
 
@@ -638,7 +657,9 @@ RecurringTransactionForm({
             {
               frequency === 'WEEKLY'
                 ? 'Dia da semana'
-                : 'Dia do vencimento'
+                : frequency === 'YEARLY'
+                  ? 'Vencimento anual'
+                  : 'Dia do vencimento'
             }
           </label>
 
@@ -697,6 +718,91 @@ RecurringTransactionForm({
                     </option>
                   </select>
                 )
+              : frequency === 'YEARLY'
+                ? (
+
+                    <div className="
+                      grid
+                      grid-cols-1
+                      sm:grid-cols-2
+                      gap-3
+                    ">
+
+                      <select
+                        name="annualMonth"
+
+                        required
+
+                        defaultValue={
+                          initialData
+                            ?.annualMonth
+                          ?? new Date()
+                            .getMonth() + 1
+                        }
+
+                        className="
+                          border
+                          border-zinc-300
+                          rounded-2xl
+                          px-4
+                          py-3
+                          bg-white
+                          text-zinc-900
+                          placeholder:text-zinc-400
+                        "
+                      >
+                        {
+                          monthOptions.map(
+                            (
+                              month,
+                              index
+                            ) => (
+
+                              <option
+                                key={month}
+
+                                value={index + 1}
+                              >
+                                {month}
+                              </option>
+                            )
+                          )
+                        }
+                      </select>
+
+                      <input
+                        type="number"
+
+                        name="dueDay"
+
+                        required
+
+                        min={1}
+
+                        max={31}
+
+                        defaultValue={
+                          initialData
+                            ?.dueDay
+                          ?? 1
+                        }
+
+                        placeholder="Dia"
+
+                        className="
+                          border
+                          border-zinc-300
+                          rounded-2xl
+                          px-4
+                          py-3
+                          bg-white
+                          text-zinc-900
+                          placeholder:text-zinc-400
+                        "
+                      />
+
+                    </div>
+                  )
               : (
 
                   <input

@@ -16,6 +16,7 @@ import {
 
 import {
   formatDateOnly,
+  getAnnualDueDate,
   getCurrentMonthDueDate,
   getNextWeekdayDate,
   normalizeDueDay,
@@ -67,6 +68,15 @@ POST(
       Number(
         formData.get(
           'weekDay'
+        )
+      )
+    );
+
+  const annualMonth =
+    normalizeDueDay(
+      Number(
+        formData.get(
+          'annualMonth'
         )
       )
     );
@@ -130,6 +140,16 @@ POST(
               weekDay,
             })
           )
+        : frequency === 'YEARLY'
+          ? formatDateOnly(
+              getAnnualDueDate({
+
+                month:
+                  annualMonth,
+
+                dueDay,
+              })
+            )
         : formatDateOnly(
             getCurrentMonthDueDate(
               dueDay

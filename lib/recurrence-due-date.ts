@@ -118,6 +118,37 @@ getCurrentMonthDueDate(
 }
 
 export function
+getAnnualDueDate({
+  month,
+  dueDay,
+}: {
+  month: number;
+
+  dueDay: number;
+}) {
+
+  const now =
+    new Date();
+
+  return getMonthlyDueDate({
+
+    year:
+      now.getFullYear(),
+
+    monthIndex:
+      Math.min(
+        12,
+        Math.max(
+          1,
+          month
+        )
+      ) - 1,
+
+    dueDay,
+  });
+}
+
+export function
 getNextWeekdayDate({
   fromDate,
   weekDay,

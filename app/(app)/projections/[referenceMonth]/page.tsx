@@ -21,6 +21,10 @@ import {
   formatCurrency,
 } from '@/lib/currency';
 
+import {
+  ExpensesByCategory,
+} from '@/app/components/expenses-by-category';
+
 type Props = {
 
   params: Promise<{
@@ -104,6 +108,7 @@ ProjectionMonthPage({
     realizedTransactions,
     hasMoreRecurring,
     hasMoreTransactions,
+    expensesByCategory,
   } = projection;
 
   const previousMonth =
@@ -115,6 +120,11 @@ ProjectionMonthPage({
     getNextReferenceMonth(
       referenceMonth
     );
+
+  const today =
+    new Date()
+      .toISOString()
+      .split('T')[0];
 
   function
   getStatusLabel(
@@ -429,6 +439,8 @@ ProjectionMonthPage({
 
       </div>
 
+      {/* ExpensesByCategory moved to page end */}
+
       {/* CONTENT */}
 
       <div className="
@@ -470,20 +482,17 @@ ProjectionMonthPage({
 
           <div className="
             space-y-3
-            max-h-[700px]
-            overflow-y-auto
-            pr-2
+            max-h-none
+            overflow-y-visible
+            pr-0
           ">
 
             {
               recurringSnapshots.map(
                 (item) => (
 
-                  <Link
-                    href={`/recurring-transactions/${item.id}`}
-
+                  <div
                     key={item.id}
-
                     className="
                       flex
                       items-center
@@ -493,119 +502,173 @@ ProjectionMonthPage({
                       rounded-2xl
                       p-4
                       bg-white
-
                       hover:border-zinc-400
                       hover:shadow-sm
-
                       transition-all
-                      cursor-pointer
                     "
                   >
 
-                    <div className="flex-1">
-
-                      <div className="
-                        flex
-                        items-center
-                        gap-2
-                      ">
-
-                        <p className="
-                          font-medium
-                          text-zinc-800
+                    <div className="flex-1 min-w-0">
+                      <Link
+                        href={`/recurring-transactions/${item.id}`}
+                        className="
+                          block
+                          min-w-0
+                        "
+                      >
+                        <div className="
+                          flex
+                          items-center
+                          gap-2
                         ">
-                          {item.description}
-                        </p>
 
-                        <span>
-                          {
-                            getStatusIcon(
-                              item.status
-                            )
-                          }
-                        </span>
+                          <p className="
+                            font-medium
+                            text-zinc-800
+                          ">
+                            {item.description}
+                          </p>
 
-                      </div>
+                          <span>
+                            {
+                              getStatusIcon(
+                                item.status
+                              )
+                            }
+                          </span>
 
-                      <div className="
-                        flex
-                        items-center
-                        gap-2
-                        mt-2
-                        flex-wrap
-                      ">
+                        </div>
 
-                        <p className="
-                          text-sm
-                          text-zinc-500
+                        <div className="
+                          flex
+                          items-center
+                          gap-2
+                          mt-2
+                          flex-wrap
                         ">
-                          {item.dueDate}
-                        </p>
 
-                        <span className="
-                          text-zinc-300
-                        ">
-                          •
-                        </span>
+                          <p className="
+                            text-sm
+                            text-zinc-500
+                          ">
+                            {item.dueDate}
+                          </p>
 
-                        <p className="
-                          text-sm
-                          text-zinc-500
-                        ">
-                          {
-                            getStatusLabel(
-                              item.status
-                            )
-                          }
-                        </p>
+                          <span className="
+                            text-zinc-300
+                          ">
+                            •
+                          </span>
 
-                      </div>
+                          <p className="
+                            text-sm
+                            text-zinc-500
+                          ">
+                            {
+                              getStatusLabel(
+                                item.status
+                              )
+                            }
+                          </p>
+
+                        </div>
+                      </Link>
 
                       {
                         item.status === 'PROJECTED'
                         &&
                         item.transactionType === 'EXPENSE'
-                        &&
-                        item.paymentMethodType !== 'CREDIT_CARD'
                         && (
 
-                          <form
-                            action="/api/recurring-transactions/pay"
-
-                            method="POST"
-
-                            encType="multipart/form-data"
-
-                            className="mt-4"
-                          >
-
-                            <input
-                              type="hidden"
-
-                              name="recurringTransactionId"
-
-                              value={item.id}
-                            />
-
-                            <button
-                              type="submit"
-
+                          <div className="mt-4 space-y-2">
+                            <form
+                              action="/api/recurring-transactions/pay"
+                              method="POST"
+                              encType="multipart/form-data"
                               className="
-                                px-4
-                                py-2
-                                rounded-xl
-                                bg-zinc-900
-                                text-white
-                                text-sm
-                                font-medium
-                                hover:bg-zinc-800
-                                transition
+                                flex
+                                flex-wrap
+                                items-end
+                                gap-3
                               "
                             >
-                              Marcar como pago
-                            </button>
 
-                          </form>
+                              <input
+                                type="hidden"
+                                name="recurringTransactionId"
+                                value={item.id}
+                              />
+
+                              <label className="
+                                grid
+                                gap-1
+                              ">
+                                <span className="
+                                  text-xs
+                                  font-medium
+                                  text-zinc-500
+                                ">
+                                  Pago em
+                                </span>
+
+                                <input
+                                  type="date"
+                                  name="paidAt"
+                                  defaultValue={today}
+                                  className="
+                                    rounded-xl
+                                    border
+                                    border-zinc-300
+                                    px-3
+                                    py-2
+                                    text-sm
+                                    text-zinc-900
+                                  "
+                                />
+                              </label>
+
+                              <button
+                                type="submit"
+                                className="
+                                  px-4
+                                  py-2
+                                  rounded-xl
+                                  bg-zinc-900
+                                  text-white
+                                  text-sm
+                                  font-medium
+                                  hover:bg-zinc-800
+                                  transition
+                                "
+                              >
+                                Marcar como pago
+                              </button>
+
+                            </form>
+
+                            <form
+                              action={`/api/recurring-transactions/${item.id}/cancel`}
+                              method="POST"
+                              className="mt-2"
+                            >
+                              <button
+                                type="submit"
+                                className="
+                                  px-4
+                                  py-2
+                                  rounded-xl
+                                  bg-red-100
+                                  text-red-700
+                                  text-sm
+                                  font-medium
+                                  hover:bg-red-200
+                                  transition
+                                "
+                              >
+                                Cancelar ocorrência
+                              </button>
+                            </form>
+                          </div>
                         )
                       }
 
@@ -631,12 +694,13 @@ ProjectionMonthPage({
                         formatCurrency(
                           Number(
                             item.projectedAmount
+                            ?? '0'
                           )
                         )
                       }
                     </p>
 
-                  </Link>
+                  </div>
                 )
               )
             }
@@ -753,9 +817,9 @@ ProjectionMonthPage({
 
           <div className="
             space-y-3
-            max-h-[700px]
-            overflow-y-auto
-            pr-2
+            max-h-none
+            overflow-y-visible
+            pr-0
           ">
 
             {
@@ -910,6 +974,15 @@ ProjectionMonthPage({
         </div>
 
       </div>
+
+      {/* Expenses by category placed at page end */}
+
+      <ExpensesByCategory
+        data={expensesByCategory}
+        title="Despesas previstas por categoria"
+        subtitle="Pagas e pendentes neste mês projetado"
+        emptyMessage="Nenhuma despesa prevista para este mês"
+      />
 
     </main>
   );

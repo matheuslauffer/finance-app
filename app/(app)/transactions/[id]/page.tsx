@@ -237,6 +237,40 @@ TransactionDetailsPage({
 
           </div>
 
+          <div>
+
+            <p className="
+              text-sm
+              text-zinc-500
+              mb-1
+            ">
+              Data de cadastro
+            </p>
+
+            <p className="
+              text-lg
+              font-medium
+              text-zinc-900
+            ">
+              {
+                new Date(
+                  transaction
+                    .createdAt
+                )
+                  .toLocaleString(
+                    'pt-BR',
+                    {
+                      dateStyle:
+                        'short',
+                      timeStyle:
+                        'short',
+                    }
+                  )
+              }
+            </p>
+
+          </div>
+
         </div>
 
       </div>

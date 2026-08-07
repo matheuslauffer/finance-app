@@ -47,6 +47,12 @@ POST(
       )
     );
 
+  const paidAt =
+    formData.get(
+      'paidAt'
+    )?.toString()
+    || null;
+
   /*
   VALIDATION
   */
@@ -72,6 +78,29 @@ POST(
     );
   }
 
+  if (
+    paidAt
+    &&
+    Number.isNaN(
+      new Date(
+        `${paidAt}T00:00:00`
+      ).getTime()
+    )
+  ) {
+
+    return NextResponse.json(
+
+      {
+        error:
+          'Invalid payment date',
+      },
+
+      {
+        status: 400,
+      }
+    );
+  }
+
   /*
   PAY
   */
@@ -82,6 +111,8 @@ POST(
       session.userId,
 
     recurringTransactionId,
+
+    paidAt,
   });
 
   /*

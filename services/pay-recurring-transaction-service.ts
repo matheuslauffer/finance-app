@@ -15,10 +15,6 @@ import {
 } from '@/db/schema/payment-methods';
 
 import {
-  financialMonths,
-} from '@/db/schema/financial-months';
-
-import {
   transactions,
 } from '@/db/schema/transactions';
 
@@ -44,12 +40,15 @@ type Input = {
   userId: string;
 
   recurringTransactionId: string;
+
+  paidAt?: string | null;
 };
 
 export async function
 payRecurringTransaction({
   userId,
   recurringTransactionId,
+  paidAt,
 }: Input) {
 
   /*
@@ -162,77 +161,45 @@ payRecurringTransaction({
       );
 
   /*
-  COMPETENCY DATE
+  PAYMENT DATE
   */
 
-  const competencyDate =
-    getFinancialCompetencyDate({
+  const paymentDate =
+    paidAt
 
-      occurredAt:
-        new Date(
-          snapshot.dueDate
-        ),
-
-      closingDay:
-        paymentMethod
-          ?.closingDay
-        ?? null,
-
-      dueDay:
-        paymentMethod
-          ?.dueDay
-        ?? null,
-    });
-
-  /*
-  REFERENCE MONTH
-  */
-
-  const referenceMonth =
-    `${competencyDate.getFullYear()}-${String(
-      competencyDate.getMonth() + 1
-    ).padStart(2, '0')}`;
-
-  /*
-  FINANCIAL MONTH
-  */
-
-  const [financialMonth] =
-    await db
-
-      .select()
-
-      .from(
-        financialMonths
-      )
-
-      .where(
-        and(
-
-          eq(
-            financialMonths.userId,
-            userId
-          ),
-
-          eq(
-            financialMonths.referenceMonth,
-            referenceMonth
-          )
+      ? new Date(
+          `${paidAt}T00:00:00`
         )
-      );
 
-  if (!financialMonth) {
+      : getFinancialCompetencyDate({
 
-    throw new Error(
-      'Financial month not found'
-    );
-  }
+          occurredAt:
+            new Date(
+              snapshot.dueDate
+            ),
+
+          closingDay:
+            paymentMethod
+              ?.closingDay
+            ?? null,
+
+          dueDay:
+            paymentMethod
+              ?.dueDay
+            ?? null,
+        });
+
+  const paymentDateText =
+    paymentDate
+      .toISOString()
+      .split('T')[0];
 
   /*
   CREATE REAL TRANSACTION
   */
 
-  await createFinancialOperation({
+  const result =
+    await createFinancialOperation({
 
     userId,
 
@@ -258,21 +225,24 @@ payRecurringTransaction({
       'CONFIRMED',
 
     occurredAt:
-      competencyDate,
+      paymentDate,
 
     effectiveDate:
-      competencyDate
-        .toISOString()
-        .split('T')[0],
+      paymentDateText,
 
     recurringTransactionId:
       snapshot.id,
 
     dueDate:
-      competencyDate
-        .toISOString()
-        .split('T')[0],
+      snapshot.dueDate,
   });
+
+  if (!result.transaction) {
+
+    throw new Error(
+      'Recurring payment transaction was not created'
+    );
+  }
 
   /*
   MARK SNAPSHOT AS FULFILLED
@@ -302,6 +272,16 @@ payRecurringTransaction({
   */
 
   await recalculateFinancialMonth(
-    financialMonth.id
+    snapshot.financialMonthId
   );
+
+  if (
+    result.transaction.financialMonthId
+    !== snapshot.financialMonthId
+  ) {
+
+    await recalculateFinancialMonth(
+      result.transaction.financialMonthId
+    );
+  }
 }

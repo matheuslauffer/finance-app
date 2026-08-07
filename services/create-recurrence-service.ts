@@ -37,6 +37,8 @@ type Input = {
 
   weekDay:
     number | null;
+
+  endedAt?: string;
 };
 
 export async function
@@ -80,6 +82,9 @@ createRecurrence(
 
         weekDay:
           input.weekDay,
+
+        endedAt:
+          input.endedAt,
 
         isActive:
           true,

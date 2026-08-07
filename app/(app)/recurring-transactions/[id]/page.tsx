@@ -15,6 +15,10 @@ import {
 } from '@/db/schema/recurring-transactions';
 
 import {
+  recurrences,
+} from '@/db/schema/recurrences';
+
+import {
   paymentMethods,
 } from '@/db/schema/payment-methods';
 
@@ -120,6 +124,9 @@ RecurringTransactionPage({
         recurringTransaction:
           recurringTransactions,
 
+        recurrence:
+          recurrences,
+
         paymentMethod:
           paymentMethods,
 
@@ -129,6 +136,16 @@ RecurringTransactionPage({
 
       .from(
         recurringTransactions
+      )
+
+      .leftJoin(
+
+        recurrences,
+
+        eq(
+          recurringTransactions.recurrenceId,
+          recurrences.id
+        )
       )
 
       .leftJoin(
@@ -167,6 +184,9 @@ RecurringTransactionPage({
 
   const item =
     transaction.recurringTransaction;
+
+  const recurrence =
+    transaction.recurrence;
 
   return (
 
@@ -428,25 +448,86 @@ RecurringTransactionPage({
           )
         }
 
-        <Link
-          href={`/recurring-transactions/${item.recurrenceId}/edit`}
+        <div className="
+          grid
+          gap-3
+          sm:grid-cols-[1fr_1fr]
+          items-center
+        ">
 
-          className="
-            inline-flex
-            px-5
-            py-3
-            rounded-2xl
-            border
-            border-zinc-300
-            bg-white
-            text-zinc-900
-            font-medium
-            hover:bg-zinc-50
-            transition
-          "
-        >
-          Editar recorrência
-        </Link>
+          {recurrence?.isActive && (
+            <form
+              action={`/api/recurring-transactions/${item.recurrenceId}/pause`}
+              method="POST"
+              encType="multipart/form-data"
+            >
+              <button
+                type="submit"
+                className="
+                  w-full
+                  px-5
+                  py-3
+                  rounded-2xl
+                  bg-zinc-900
+                  text-white
+                  font-medium
+                  hover:bg-zinc-800
+                  transition
+                "
+              >
+                Pausar recorrência
+              </button>
+            </form>
+          )}
+
+          {item.status === 'PROJECTED' && (
+            <form
+              action={`/api/recurring-transactions/${item.id}/cancel`}
+              method="POST"
+              encType="multipart/form-data"
+            >
+              <button
+                type="submit"
+                className="
+                  w-full
+                  px-5
+                  py-3
+                  rounded-2xl
+                  bg-red-500
+                  text-white
+                  font-medium
+                  hover:bg-red-600
+                  transition
+                "
+              >
+                Apagar ocorrência
+              </button>
+            </form>
+          )}
+
+          <Link
+            href={`/recurring-transactions/${item.recurrenceId}/edit`}
+
+            className="
+              inline-flex
+              w-full
+              justify-center
+              px-5
+              py-3
+              rounded-2xl
+              border
+              border-zinc-300
+              bg-white
+              text-zinc-900
+              font-medium
+              hover:bg-zinc-50
+              transition
+            "
+          >
+            Editar recorrência
+          </Link>
+
+        </div>
 
       </div>
 

@@ -21,8 +21,8 @@ import {
 } from '@/services/transaction-service';
 
 import {
-  getRecurringTransactions,
-} from '@/services/recurring-transactions-service';
+  formatDate,
+} from '@/lib/date-format';
 
 export default async function
 NewTransactionPage() {
@@ -43,22 +43,14 @@ NewTransactionPage() {
       userId
     );
 
-  const [
-    recentTransactions,
+  const recentTransactions =
+    await getTransactions({
 
-    recurringTransactions,
-  ] =
-    await Promise.all([
+      userId,
 
-      getTransactions({
-
-        userId,
-      }),
-
-      getRecurringTransactions(
-        userId
-      ),
-    ]);
+      limit:
+        8,
+    });
 
   const recentItems =
     [
@@ -69,7 +61,11 @@ NewTransactionPage() {
             transaction.id,
 
           kind:
-            'TRANSACTION' as const,
+            transaction.recurringTransactionId
+
+              ? 'RECURRING' as const
+
+              : 'TRANSACTION' as const,
 
           description:
             transaction.description,
@@ -83,56 +79,14 @@ NewTransactionPage() {
           status:
             transaction.status,
 
+          paidAt:
+            transaction.effectiveDate,
+
           createdAt:
             transaction.createdAt,
         })
       ),
-
-      ...recurringTransactions.map(
-          (recurring) => ({
-
-            id:
-              recurring.id,
-
-            kind:
-              'RECURRING' as const,
-
-            description:
-              recurring.description,
-
-            amount:
-              recurring.amount,
-
-            transactionType:
-              'EXPENSE' as const,
-
-            status:
-              recurring.endedAt
-
-                ? 'ENDED'
-
-                : recurring.isActive
-
-                  ? 'ACTIVE'
-
-                  : 'PAUSED',
-
-            createdAt:
-              recurring.nextOccurrence,
-          })
-        ),
     ]
-      .sort(
-        (first, second) => (
-          new Date(
-            second.createdAt
-          ).getTime()
-          -
-          new Date(
-            first.createdAt
-          ).getTime()
-        )
-      )
       .slice(
         0,
         8
@@ -293,6 +247,7 @@ NewTransactionPage() {
                         <div className="
                           flex
                           items-center
+                          flex-wrap
                           gap-2
                           mt-2
                         ">
@@ -303,6 +258,28 @@ NewTransactionPage() {
                           ">
                             {
                               item.transactionType
+                            }
+                          </span>
+
+                          <span className="
+                            text-sm
+                            text-zinc-500
+                          ">
+                            Pago em {
+                              formatDate(
+                                item.paidAt
+                              )
+                            }
+                          </span>
+
+                          <span className="
+                            text-sm
+                            text-zinc-400
+                          ">
+                            Cadastrado em {
+                              formatDate(
+                                item.createdAt
+                              )
                             }
                           </span>
 

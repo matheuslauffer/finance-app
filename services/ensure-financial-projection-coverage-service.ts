@@ -13,22 +13,18 @@ import {
 } from '@/db/schema/recurring-transactions';
 
 import {
-  paymentMethods,
-} from '@/db/schema/payment-methods';
-
-import {
   and,
   eq,
   sql,
 } from 'drizzle-orm';
 
 import {
-  isAutomaticPaymentMethod,
-} from '@/lib/payment-method-behavior';
-
-import {
   recalculateFinancialMonth,
 } from './recalculate-financial-month';
+
+import {
+  cleanupWeeklyRecurringDuplicates,
+} from './cleanup-weekly-recurring-duplicates-service';
 
 import {
   formatDateOnly,
@@ -336,32 +332,6 @@ ensureFinancialProjectionCoverage({
       /*
       PAYMENT METHOD
       */
-
-      const [paymentMethod] =
-        await db
-
-          .select()
-
-          .from(paymentMethods)
-
-          .where(
-            eq(
-              paymentMethods.id,
-              recurrence.paymentMethodId
-            )
-          );
-
-      if (!paymentMethod) {
-
-        continue;
-      }
-
-      const isAutomatic =
-        isAutomaticPaymentMethod(
-          paymentMethod.methodType,
-
-          paymentMethod.requiresManualPayment
-        );
 
       const [
         dueYear,
@@ -704,10 +674,32 @@ ensureFinancialProjectionCoverage({
             dueDate,
 
             status:
-              isAutomatic
-                ? 'FULFILLED'
-                : 'PROJECTED',
+              'PROJECTED',
           });
+      }
+
+      if (
+        recurrence.frequency
+        === 'WEEKLY'
+      ) {
+
+        await cleanupWeeklyRecurringDuplicates({
+
+          recurrenceId:
+            recurrence.id,
+
+          financialMonthId:
+            financialMonth.id,
+
+          weekDay:
+            normalizeWeekDay(
+              recurrence.weekDay
+              ??
+              new Date(
+                recurrence.nextOccurrence
+              ).getDay()
+            ),
+        });
       }
     }
 

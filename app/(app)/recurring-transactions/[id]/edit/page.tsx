@@ -194,6 +194,11 @@ EditRecurringTransactionPage({
               recurring.nextOccurrence
             ).getUTCDate(),
 
+          annualMonth:
+            new Date(
+              recurring.nextOccurrence
+            ).getUTCMonth() + 1,
+
           weekDay:
             recurring.weekDay
             ??

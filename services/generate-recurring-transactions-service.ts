@@ -21,18 +21,6 @@ import {
   getReferenceMonth,
 } from '@/lib/reference-month';
 
-import{
-  isAutomaticPaymentMethod,
-} from '@/lib/payment-method-behavior';
-
-import {
-  paymentMethods,
-} from '@/db/schema/payment-methods';
-
-import {
-  createFinancialOperation,
-} from '@/services/financial-operation-service';
-
 import {
   formatDateOnly,
   getMonthlyDueDate,
@@ -40,6 +28,10 @@ import {
   normalizeDueDay,
   normalizeWeekDay,
 } from '@/lib/recurrence-due-date';
+
+import {
+  cleanupWeeklyRecurringDuplicates,
+} from './cleanup-weekly-recurring-duplicates-service';
 
 function
 addFrequency(
@@ -148,34 +140,6 @@ generateRecurringTransactions(
       'Recurrence not found'
     );
   }
-
-  const [paymentMethod] =
-  await db
-
-    .select()
-
-    .from(paymentMethods)
-
-    .where(
-      eq(
-        paymentMethods.id,
-        recurrence.paymentMethodId
-      )
-    );
-
-  if (!paymentMethod) {
-
-    throw new Error(
-      'Payment method not found'
-    );
-  }
-
-  const isAutomatic =
-  isAutomaticPaymentMethod(
-    paymentMethod.methodType,
-
-    paymentMethod.requiresManualPayment
-  );
 
   if (
     !recurrence.isActive
@@ -518,8 +482,7 @@ generateRecurringTransactions(
 
     if (!existing) {
 
-      const [snapshot] =
-        await db
+      await db
 
         .insert(
           recurringTransactions
@@ -554,64 +517,31 @@ generateRecurringTransactions(
             ),
 
           status:
-            isAutomatic
-              ? 'FULFILLED'
-              : 'PROJECTED',
-        })
-
-      .returning();
-
-      if (isAutomatic) {
-
-        await createFinancialOperation({
-
-          userId:
-            recurrence.userId,
-
-          paymentMethodId:
-            recurrence.paymentMethodId,
-
-          categoryId:
-            recurrence.categoryId,
-
-          description:
-            recurrence.description,
-
-          amount:
-            recurrence.amount,
-
-          operationType:
-            'PURCHASE',
-
-          transactionType:
-            recurrence.transactionType,
-
-          status:
-            'CONFIRMED',
-
-          occurredAt:
-            currentDate,
-
-          effectiveDate:
-            formatDateOnly(
-              currentDate
-            ),
-
-          dueDate:
-            formatDateOnly(
-              currentDate
-            ),
-
-          recurringTransactionId:
-            snapshot.id,
+            'PROJECTED',
         });
-      }
 
       createdCount++;
 
     } else {
 
       skippedCount++;
+    }
+
+    if (
+      recurrence.frequency
+      === 'WEEKLY'
+    ) {
+
+      await cleanupWeeklyRecurringDuplicates({
+
+        recurrenceId:
+          recurrence.id,
+
+        financialMonthId:
+          financialMonth.id,
+
+        weekDay,
+      });
     }
 
     /*

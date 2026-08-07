@@ -25,6 +25,11 @@ import {
 } from '@/lib/date';
 
 import {
+  and,
+  eq,
+} from 'drizzle-orm';
+
+import {
   CreateFinancialOperationInput,
 } from '@/types/create-financial-operation';
 
@@ -35,6 +40,14 @@ import {
 import {
   resolveFinancialMonth,
 } from './financial-month-service';
+
+import {
+  financialMonths,
+} from '@/db/schema/financial-months';
+
+import {
+  resolveFinancialMonthStatus,
+} from '@/lib/financial-month-status';
 
 import {
   ensureFinancialProjectionCoverage,
@@ -180,6 +193,9 @@ createFinancialOperation(
 
           amount:
             input.amount,
+
+          recurringTransactionId:
+            input.recurringTransactionId,
         });
 
         /*
@@ -286,15 +302,41 @@ createFinancialOperation(
         lastInstallmentDate =
           installmentDate;
 
-        const installmentFinancialMonth =
-          await resolveFinancialMonth(
+        // For installments we want each parcel to belong to the calendar
+        // reference month of the installment date (YYYY-MM), regardless of
+        // payment method competency. This makes projections show each
+        // installment in its respective month.
+        const installmentReferenceMonth =
+          installmentDate.toISOString().slice(0, 7);
 
-            input.userId,
+        let [installmentFinancialMonth] =
+          await tx
+            .select()
+            .from(financialMonths)
+            .where(
+              and(
+                eq(financialMonths.userId, input.userId),
+                eq(financialMonths.referenceMonth, installmentReferenceMonth)
+              )
+            );
 
-            input.paymentMethodId,
+        if (!installmentFinancialMonth) {
+          const [createdMonth] =
+            await tx
+              .insert(financialMonths)
+              .values({
+                userId: input.userId,
+                referenceMonth: installmentReferenceMonth,
+                projectedIncome: '0',
+                projectedExpense: '0',
+                projectedBalance: '0',
+                committedAmount: '0',
+                status: resolveFinancialMonthStatus(installmentReferenceMonth),
+              })
+              .returning();
 
-            installmentDate
-          );
+          installmentFinancialMonth = createdMonth;
+        }
 
         const [transaction] =
           await tx

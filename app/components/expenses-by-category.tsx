@@ -8,11 +8,20 @@ type Props = {
 
     total: number;
   }[];
+
+  title?: string;
+
+  subtitle?: string;
+
+  emptyMessage?: string;
 };
 
 export function
 ExpensesByCategory({
   data,
+  title = 'Maiores despesas',
+  subtitle = 'Distribuição por categoria',
+  emptyMessage = 'Nenhuma despesa encontrada para este período',
 }: Props) {
 
   const sortedData =
@@ -56,21 +65,35 @@ ExpensesByCategory({
           font-bold
           text-zinc-900
         ">
-          Maiores despesas
+          {title}
         </h2>
 
         <p className="
           text-zinc-500
           mt-1
         ">
-          Distribuição por categoria
+          {subtitle}
         </p>
 
       </div>
 
-      <div className="
-        space-y-5
-      ">
+      {
+        sortedData.length === 0
+          ? (
+
+            <p className="
+              text-sm
+              text-zinc-500
+            ">
+              {emptyMessage}
+            </p>
+          )
+
+          : (
+
+            <div className="
+              space-y-5
+            ">
 
         {
           sortedData.map((item) => {
@@ -158,7 +181,9 @@ ExpensesByCategory({
           })
         }
 
-      </div>
+            </div>
+          )
+      }
 
     </div>
   );

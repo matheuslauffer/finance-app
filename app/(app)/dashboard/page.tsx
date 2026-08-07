@@ -7,6 +7,10 @@ import {
 } from 'next/navigation';
 
 import {
+  SearchParams,
+} from 'next/dist/server/request/search-params';
+
+import {
   getCurrentDashboard,
 } from '@/services/dashboard-service';
 
@@ -20,8 +24,16 @@ import {
 
 import Link from 'next/link';
 
+type Props = {
+  searchParams: Promise<{
+    pendingPage?: string;
+  }>;
+};
+
 export default async function
-DashboardPage() {
+DashboardPage({
+  searchParams,
+}: Props) {
 
   const session =
     await auth();
@@ -34,10 +46,39 @@ DashboardPage() {
     redirect('/sign-in');
   }
 
+  const {
+    pendingPage,
+  } = await searchParams;
+
   const dashboard =
     await getCurrentDashboard(
-      userId
+      userId,
+      {
+        pendingPage:
+          Number(pendingPage || '1'),
+      }
     );
+
+  const today =
+    new Date()
+      .toISOString()
+      .split('T')[0];
+
+  function formatCurrency(
+    value: number
+  ) {
+
+    return new Intl.NumberFormat(
+      'pt-BR',
+      {
+        style:
+          'currency',
+
+        currency:
+          'BRL',
+      }
+    ).format(value);
+  }
 
   return (
 
@@ -65,14 +106,14 @@ DashboardPage() {
           font-bold
           text-zinc-900
         ">
-          Olá 👋
+          Painel financeiro
         </h1>
 
         <p className="
           text-zinc-500
           mt-2
         ">
-          Aqui está o resumo da sua vida financeira
+          Pendências, pagamentos e lançamentos recentes
         </p>
 
       </div>
@@ -99,102 +140,189 @@ DashboardPage() {
 
     </div>
 
-    {/* MAIN BALANCE */}
+    {/* OPERATIONAL SUMMARY */}
 
-    <div className={`
-      rounded-[2rem]
-      p-8
-      shadow-sm
-      border
-
-      ${
-        dashboard.monthlyBalance >= 0
-
-          ? `
-            bg-emerald-500
-            border-emerald-400
-            text-white
-          `
-
-          : `
-            bg-red-500
-            border-red-400
-            text-white
-          `
-      }
-    `}>
-
-      <p className="
-        text-sm
-        uppercase
-        tracking-widest
-        opacity-80
-        mb-4
-      ">
-        Saldo do mês
-      </p>
-
-      <h2 className="
-        text-6xl
-        font-bold
-      ">
-        R$
-        {
-          dashboard.monthlyBalance
-            .toFixed(2)
-        }
-      </h2>
+    <div className="
+      grid
+      grid-cols-1
+      sm:grid-cols-2
+      xl:grid-cols-4
+      gap-4
+    ">
 
       <div className="
-        mt-8
-        flex
-        gap-8
-        flex-wrap
+        bg-white
+        border
+        border-zinc-200
+        rounded-2xl
+        p-5
+        shadow-sm
       ">
 
-        <div>
+        <p className="
+          text-sm
+          font-medium
+          text-zinc-500
+        ">
+          Pendente
+        </p>
 
-          <p className="
-            text-sm
-            opacity-80
-          ">
-            Receitas
-          </p>
+        <p className="
+          mt-2
+          text-2xl
+          font-bold
+          text-zinc-900
+        ">
+          {
+            formatCurrency(
+              dashboard
+                .operationalSummary
+                .pendingAmount
+            )
+          }
+        </p>
 
-          <p className="
-            text-2xl
-            font-semibold
-          ">
-            R$
-            {
-              dashboard.projectedIncome
-                .toFixed(2)
-            }
-          </p>
+        <p className="
+          mt-1
+          text-xs
+          text-zinc-500
+        ">
+          {
+            dashboard
+              .operationalSummary
+              .pendingCount
+          } contas em aberto
+        </p>
 
-        </div>
+      </div>
 
-        <div>
+      <div className="
+        bg-white
+        border
+        border-red-100
+        rounded-2xl
+        p-5
+        shadow-sm
+      ">
 
-          <p className="
-            text-sm
-            opacity-80
-          ">
-            Despesas
-          </p>
+        <p className="
+          text-sm
+          font-medium
+          text-red-500
+        ">
+          Atrasado
+        </p>
 
-          <p className="
-            text-2xl
-            font-semibold
-          ">
-            R$
-            {
-              dashboard.projectedExpense
-                .toFixed(2)
-            }
-          </p>
+        <p className="
+          mt-2
+          text-2xl
+          font-bold
+          text-red-600
+        ">
+          {
+            formatCurrency(
+              dashboard
+                .operationalSummary
+                .overdueAmount
+            )
+          }
+        </p>
 
-        </div>
+        <p className="
+          mt-1
+          text-xs
+          text-zinc-500
+        ">
+          {
+            dashboard
+              .operationalSummary
+              .overdueCount
+          } contas vencidas
+        </p>
+
+      </div>
+
+      <div className="
+        bg-white
+        border
+        border-zinc-200
+        rounded-2xl
+        p-5
+        shadow-sm
+      ">
+
+        <p className="
+          text-sm
+          font-medium
+          text-zinc-500
+        ">
+          Pago no mês
+        </p>
+
+        <p className="
+          mt-2
+          text-2xl
+          font-bold
+          text-emerald-600
+        ">
+          {
+            formatCurrency(
+              dashboard
+                .operationalSummary
+                .paidThisMonth
+            )
+          }
+        </p>
+
+        <p className="
+          mt-1
+          text-xs
+          text-zinc-500
+        ">
+          Despesas confirmadas
+        </p>
+
+      </div>
+
+      <div className="
+        bg-white
+        border
+        border-zinc-200
+        rounded-2xl
+        p-5
+        shadow-sm
+      ">
+
+        <p className="
+          text-sm
+          font-medium
+          text-zinc-500
+        ">
+          Previsto no mês
+        </p>
+
+        <p className="
+          mt-2
+          text-2xl
+          font-bold
+          text-zinc-900
+        ">
+          {
+            formatCurrency(
+              dashboard
+                .operationalSummary
+                .expectedThisMonth
+            )
+          }
+        </p>
+
+        <p className="
+          mt-1
+          text-xs
+          text-zinc-500
+        ">
+          Projeção de despesas
+        </p>
 
       </div>
 
@@ -205,8 +333,9 @@ DashboardPage() {
     <div className="
       grid
       grid-cols-1
-      xl:grid-cols-2
+      xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)]
       gap-6
+      items-start
     ">
 
       {/* WEEKLY EXPENSES */}
@@ -229,14 +358,14 @@ DashboardPage() {
             font-bold
             text-zinc-900
           ">
-            Contas da semana
+            Contas pendentes
           </h2>
 
           <p className="
             text-zinc-500
             mt-1
           ">
-            Próximos pagamentos
+            Atrasadas e previstas até o mês atual
           </p>
 
         </div>
@@ -254,8 +383,8 @@ DashboardPage() {
                 <p className="
                   text-zinc-500
                 ">
-                  Nenhuma despesa
-                  prevista para esta semana
+                  Nenhuma recorrência
+                  pendente até este mês
                 </p>
               )
 
@@ -300,6 +429,315 @@ DashboardPage() {
                           }
                         </p>
 
+                        <div className="
+                          mt-2
+                          flex
+                          flex-wrap
+                          gap-2
+                        ">
+
+                          <span className="
+                            rounded-full
+                            bg-zinc-100
+                            px-2
+                            py-1
+                            text-xs
+                            font-medium
+                            text-zinc-600
+                          ">
+                            {expense.referenceMonth}
+                          </span>
+
+                          {
+                            expense.referenceMonth
+                            < dashboard.currentMonth.referenceMonth
+                            && (
+
+                              <span className="
+                                rounded-full
+                                bg-red-100
+                                px-2
+                                py-1
+                                text-xs
+                                font-medium
+                                text-red-700
+                              ">
+                                Atrasada
+                              </span>
+                            )
+                          }
+
+                        </div>
+
+                        <form
+                          action="/api/recurring-transactions/pay"
+
+                          method="POST"
+
+                          encType="multipart/form-data"
+
+                          className="
+                            mt-3
+                            flex
+                            flex-wrap
+                            items-end
+                            gap-3
+                          "
+                        >
+
+                          <input
+                            type="hidden"
+
+                            name="recurringTransactionId"
+
+                            value={
+                              expense.recurringTransactionId
+                            }
+                          />
+
+                          <label className="
+                            grid
+                            gap-1
+                          ">
+                            <span className="
+                              text-xs
+                              font-medium
+                              text-zinc-500
+                            ">
+                              Pago em
+                            </span>
+
+                            <input
+                              type="date"
+
+                              name="paidAt"
+
+                              defaultValue={today}
+
+                              className="
+                                rounded-xl
+                                border
+                                border-zinc-300
+                                px-3
+                                py-2
+                                text-sm
+                                text-zinc-900
+                              "
+                            />
+                          </label>
+
+                          <button
+                            type="submit"
+
+                            className="
+                              px-3
+                              py-2
+                              rounded-xl
+                              bg-zinc-900
+                              text-white
+                              text-sm
+                              font-medium
+                              hover:bg-zinc-800
+                              transition
+                            "
+                          >
+                            Marcar como pago
+                          </button>
+
+                        </form>
+
+                        <form
+                          action={`/api/recurring-transactions/${expense.recurringTransactionId}/cancel`}
+                          method="POST"
+                          className="mt-3"
+                        >
+                          <button
+                            type="submit"
+                            className="
+                              px-3
+                              py-2
+                              rounded-xl
+                              bg-red-100
+                              text-red-700
+                              text-sm
+                              font-medium
+                              hover:bg-red-200
+                              transition
+                            "
+                          >
+                            Cancelar ocorrência
+                          </button>
+                        </form>
+
+                        <details className="
+                          mt-3
+                          text-sm
+                        ">
+
+                          <summary className="
+                            cursor-pointer
+                            font-medium
+                            text-zinc-600
+                            hover:text-zinc-900
+                          ">
+                            Editar
+                          </summary>
+
+                          <form
+                            action={`/api/recurring-transactions/${expense.recurringTransactionId}/edit`}
+
+                            method="POST"
+
+                            encType="multipart/form-data"
+
+                            className="
+                              mt-3
+                              grid
+                              gap-3
+                              sm:grid-cols-3
+                              max-w-xl
+                            "
+                          >
+
+                            <label className="
+                              grid
+                              gap-1
+                            ">
+                              <span className="
+                                text-xs
+                                font-medium
+                                text-zinc-500
+                              ">
+                                Valor
+                              </span>
+
+                              <input
+                                type="number"
+
+                                name="projectedAmount"
+
+                                min="0"
+
+                                step="0.01"
+
+                                defaultValue={
+                                  expense.amount
+                                    .toFixed(2)
+                                }
+
+                                className="
+                                  rounded-xl
+                                  border
+                                  border-zinc-300
+                                  px-3
+                                  py-2
+                                  text-zinc-900
+                                "
+                              />
+                            </label>
+
+                            <label className="
+                              grid
+                              gap-1
+                            ">
+                              <span className="
+                                text-xs
+                                font-medium
+                                text-zinc-500
+                              ">
+                                Vencimento
+                              </span>
+
+                              <input
+                                type="date"
+
+                                name="dueDate"
+
+                                defaultValue={
+                                  expense.effectiveDate
+                                }
+
+                                className="
+                                  rounded-xl
+                                  border
+                                  border-zinc-300
+                                  px-3
+                                  py-2
+                                  text-zinc-900
+                                "
+                              />
+                            </label>
+
+                            <label className="
+                              grid
+                              gap-1
+                            ">
+                              <span className="
+                                text-xs
+                                font-medium
+                                text-zinc-500
+                              ">
+                                Método
+                              </span>
+
+                              <select
+                                name="paymentMethodId"
+
+                                defaultValue={
+                                  expense.paymentMethodId
+                                }
+
+                                className="
+                                  rounded-xl
+                                  border
+                                  border-zinc-300
+                                  px-3
+                                  py-2
+                                  text-zinc-900
+                                "
+                              >
+                                {
+                                  dashboard.paymentMethods.map(
+                                    (method) => (
+
+                                      <option
+                                        key={method.id}
+
+                                        value={method.id}
+                                      >
+                                        {method.name}
+                                      </option>
+                                    )
+                                  )
+                                }
+                              </select>
+                            </label>
+
+                            <button
+                              type="submit"
+
+                              className="
+                                sm:col-span-3
+                                justify-self-start
+                                rounded-xl
+                                border
+                                border-zinc-300
+                                px-3
+                                py-2
+                                text-sm
+                                font-medium
+                                text-zinc-800
+                                hover:bg-zinc-50
+                                transition
+                              "
+                            >
+                              Salvar alterações
+                            </button>
+
+                          </form>
+
+                        </details>
+
                       </div>
 
                       <div className="
@@ -336,6 +774,79 @@ DashboardPage() {
           }
 
         </div>
+
+        {
+          (
+            dashboard.pendingPage > 1
+            ||
+            dashboard.hasMorePending
+          )
+          && (
+
+            <div className="
+              flex
+              items-center
+              justify-between
+              mt-6
+              pt-4
+              border-t
+              border-zinc-100
+            ">
+
+              <div>
+
+                {
+                  dashboard.pendingPage > 1
+                  && (
+
+                    <Link
+                      href={`/dashboard?pendingPage=${Math.max(1, dashboard.pendingPage - 1)}`}
+                      className="
+                        text-sm
+                        font-medium
+                        text-zinc-600
+                        hover:text-zinc-900
+                      "
+                    >
+                      ← Anterior
+                    </Link>
+                  )
+                }
+
+              </div>
+
+              <span className="
+                text-sm
+                text-zinc-500
+              ">
+                Página {dashboard.pendingPage}
+              </span>
+
+              <div>
+
+                {
+                  dashboard.hasMorePending
+                  && (
+
+                    <Link
+                      href={`/dashboard?pendingPage=${dashboard.pendingPage + 1}`}
+                      className="
+                        text-sm
+                        font-medium
+                        text-zinc-600
+                        hover:text-zinc-900
+                      "
+                    >
+                      Próxima →
+                    </Link>
+                  )
+                }
+
+              </div>
+
+            </div>
+          )
+        }
 
       </div>
 
@@ -477,6 +988,9 @@ DashboardPage() {
       data={
         dashboard.expensesByCategory
       }
+      title="Categorias que mais pesaram"
+      subtitle="Despesas confirmadas no mês atual"
+      emptyMessage="Nenhuma despesa confirmada neste mês"
     />
 
     <Link

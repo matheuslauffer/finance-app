@@ -9,6 +9,10 @@ import {
 } from '@/db/schema/transactions';
 
 import {
+  recurringTransactions,
+} from '@/db/schema/recurring-transactions';
+
+import {
   categories,
 } from '@/db/schema/categories';
 
@@ -28,6 +32,8 @@ import {
   eq,
   and,
   desc,
+  asc,
+  lte,
   sql,
 } from 'drizzle-orm';
 
@@ -90,6 +96,27 @@ type DashboardData = {
 
   }[];
 
+  operationalSummary: {
+
+    pendingAmount:
+      number;
+
+    pendingCount:
+      number;
+
+    overdueAmount:
+      number;
+
+    overdueCount:
+      number;
+
+    paidThisMonth:
+      number;
+
+    expectedThisMonth:
+      number;
+  };
+
   weeklyExpenses: {
 
     id:
@@ -106,6 +133,29 @@ type DashboardData = {
 
     paymentMethodName:
       string | null;
+
+    paymentMethodId:
+      string;
+
+    recurringTransactionId:
+      string;
+
+    referenceMonth:
+      string;
+
+  }[];
+
+  hasMorePending: boolean;
+
+  pendingPage: number;
+
+  paymentMethods: {
+
+    id:
+      string;
+
+    name:
+      string;
 
   }[];
 
@@ -131,7 +181,11 @@ type DashboardData = {
 
 export async function
 getCurrentDashboard(
-  userId: string
+  userId: string,
+  options?: {
+    pendingPage?: number;
+    pendingPageSize?: number;
+  }
 ): Promise<DashboardData>
 {
 
@@ -393,39 +447,56 @@ getCurrentDashboard(
   WEEKLY EXPENSES
   */
 
-  const today =
-    new Date();
+  const pendingPage =
+    options?.pendingPage
+    ?? 1;
 
-  const nextWeek =
-    new Date();
+  const pendingPageSize =
+    options?.pendingPageSize
+    ?? 3;
 
-  nextWeek.setDate(
-    today.getDate() + 7
-  );
-
-  const weeklyExpenses =
+  const weeklyExpensesResult =
     await db
 
       .select({
 
         id:
-          transactions.id,
+          recurringTransactions.id,
 
         description:
-          transactions.description,
+          recurringTransactions.description,
 
         amount:
-          transactions.amount,
+          recurringTransactions.projectedAmount,
 
         effectiveDate:
-          transactions.effectiveDate,
+          recurringTransactions.dueDate,
 
         paymentMethodName:
           paymentMethods.name,
+
+        paymentMethodId:
+          recurringTransactions.paymentMethodId,
+
+        recurringTransactionId:
+          recurringTransactions.id,
+
+        referenceMonth:
+          financialMonths.referenceMonth,
       })
 
       .from(
-        transactions
+        recurringTransactions
+      )
+
+      .innerJoin(
+
+        financialMonths,
+
+        eq(
+          recurringTransactions.financialMonthId,
+          financialMonths.id
+        )
       )
 
       .leftJoin(
@@ -434,7 +505,162 @@ getCurrentDashboard(
 
         eq(
           paymentMethods.id,
-          transactions.paymentMethodId
+          recurringTransactions.paymentMethodId
+        )
+      )
+
+      .where(
+        and(
+
+          eq(
+            financialMonths.userId,
+            userId
+          ),
+
+          lte(
+            financialMonths.referenceMonth,
+            currentMonth.referenceMonth
+          ),
+
+          eq(
+            recurringTransactions.transactionType,
+            'EXPENSE'
+          ),
+
+          eq(
+            recurringTransactions.status,
+            'PROJECTED'
+          )
+        )
+      )
+
+      .orderBy(
+        asc(
+          recurringTransactions.dueDate
+        )
+      )
+
+      .limit(
+        pendingPageSize + 1
+      )
+
+      .offset(
+        (pendingPage - 1)
+        * pendingPageSize
+      );
+
+  const today =
+    new Date()
+      .toISOString()
+      .split('T')[0];
+
+  const [pendingSummary] =
+    await db
+
+      .select({
+
+        pendingAmount:
+          sql<string>`
+            coalesce(
+              sum(
+                ${recurringTransactions.projectedAmount}
+              ),
+              0
+            )
+          `,
+
+        pendingCount:
+          sql<string>`
+            count(*)
+          `,
+
+        overdueAmount:
+          sql<string>`
+            coalesce(
+              sum(
+                case
+                  when ${recurringTransactions.dueDate} < ${today}
+                  then ${recurringTransactions.projectedAmount}
+                  else 0
+                end
+              ),
+              0
+            )
+          `,
+
+        overdueCount:
+          sql<string>`
+            count(
+              case
+                when ${recurringTransactions.dueDate} < ${today}
+                then 1
+              end
+            )
+          `,
+      })
+
+      .from(recurringTransactions)
+
+      .innerJoin(
+
+        financialMonths,
+
+        eq(
+          recurringTransactions.financialMonthId,
+          financialMonths.id
+        )
+      )
+
+      .where(
+        and(
+
+          eq(
+            financialMonths.userId,
+            userId
+          ),
+
+          lte(
+            financialMonths.referenceMonth,
+            currentMonth.referenceMonth
+          ),
+
+          eq(
+            recurringTransactions.transactionType,
+            'EXPENSE'
+          ),
+
+          eq(
+            recurringTransactions.status,
+            'PROJECTED'
+          )
+        )
+      );
+
+  const [paidThisMonthResult] =
+    await db
+
+      .select({
+
+        total:
+          sql<string>`
+            coalesce(
+              sum(
+                ${transactions.amount}
+              ),
+              0
+            )
+          `,
+      })
+
+      .from(transactions)
+
+      .leftJoin(
+
+        financialMonths,
+
+        eq(
+          transactions.financialMonthId,
+          financialMonths.id
         )
       )
 
@@ -451,21 +677,52 @@ getCurrentDashboard(
             'EXPENSE'
           ),
 
-          sql`
-            ${transactions.effectiveDate}
-            BETWEEN
-            ${today.toISOString().split('T')[0]}
-            AND
-            ${nextWeek.toISOString().split('T')[0]}
-          `
+          eq(
+            transactions.status,
+            'CONFIRMED'
+          ),
+
+          eq(
+            financialMonths.referenceMonth,
+            currentMonth.referenceMonth
+          )
+        )
+      );
+
+  const userPaymentMethods =
+    await db
+
+      .select({
+
+        id:
+          paymentMethods.id,
+
+        name:
+          paymentMethods.name,
+      })
+
+      .from(paymentMethods)
+
+      .where(
+        and(
+
+          eq(
+            paymentMethods.userId,
+            userId
+          ),
+
+          eq(
+            paymentMethods.isActive,
+            true
+          )
         )
       )
 
       .orderBy(
-        transactions.effectiveDate
-      )
-
-      .limit(10);
+        asc(
+          paymentMethods.name
+        )
+      );
 
   /*
   RECENT TRANSACTIONS
@@ -509,7 +766,7 @@ getCurrentDashboard(
         )
       )
 
-      .limit(5);
+      .limit(7);
 
   return {
 
@@ -532,6 +789,47 @@ getCurrentDashboard(
 
     monthlyCashFlow,
 
+    operationalSummary: {
+
+      pendingAmount:
+        Number(
+          pendingSummary
+            ?.pendingAmount
+          ?? 0
+        ),
+
+      pendingCount:
+        Number(
+          pendingSummary
+            ?.pendingCount
+          ?? 0
+        ),
+
+      overdueAmount:
+        Number(
+          pendingSummary
+            ?.overdueAmount
+          ?? 0
+        ),
+
+      overdueCount:
+        Number(
+          pendingSummary
+            ?.overdueCount
+          ?? 0
+        ),
+
+      paidThisMonth:
+        Number(
+          paidThisMonthResult
+            ?.total
+          ?? 0
+        ),
+
+      expectedThisMonth:
+        projectedExpense,
+    },
+
     expensesByCategory:
       expensesByCategory.map(
         (item) => ({
@@ -547,17 +845,28 @@ getCurrentDashboard(
       ),
 
     weeklyExpenses:
-      weeklyExpenses.map(
-        (item) => ({
+      weeklyExpensesResult
+        .slice(0, pendingPageSize)
+        .map(
+          (item) => ({
 
-          ...item,
+            ...item,
 
-          amount:
-            Number(
-              item.amount
-            ),
-        })
-      ),
+            amount:
+              Number(
+                item.amount
+              ),
+          })
+        ),
+
+    hasMorePending:
+      weeklyExpensesResult.length
+      > pendingPageSize,
+
+    pendingPage,
+
+    paymentMethods:
+      userPaymentMethods,
 
     recentTransactions:
       recentTransactions.map(
